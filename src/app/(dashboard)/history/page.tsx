@@ -179,7 +179,8 @@ export default function HistoryPage() {
                               size="sm"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                toast.info("Receipt viewer opening...");
+                                toast.info("Preparing receipt for printing...");
+                                setTimeout(() => window.print(), 100);
                               }}
                             >
                               <Eye className="w-3 h-3 mr-1" /> View Receipt

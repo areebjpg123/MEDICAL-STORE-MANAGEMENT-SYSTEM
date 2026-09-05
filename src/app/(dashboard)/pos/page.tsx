@@ -113,15 +113,25 @@ export default function POSPage() {
   }
 
   function updateQty(id: string, delta: number) {
-    setActiveCart((prev) =>
-      prev
+    setActiveCart((prev) => {
+      const item = prev.find((i) => i.id === id);
+      if (item) {
+        if (item.quantity + delta === 0) {
+          toast.info(`${item.name} removed from cart`);
+        }
+      }
+      return prev
         .map((i) => (i.id === id ? { ...i, quantity: Math.max(0, i.quantity + delta) } : i))
-        .filter((i) => i.quantity > 0)
-    );
+        .filter((i) => i.quantity > 0);
+    });
   }
 
   function removeItem(id: string) {
-    setActiveCart((prev) => prev.filter((i) => i.id !== id));
+    setActiveCart((prev) => {
+      const item = prev.find((i) => i.id === id);
+      if (item) toast.info(`${item.name} removed from cart`);
+      return prev.filter((i) => i.id !== id);
+    });
   }
 
   function addExtra() {
@@ -239,7 +249,10 @@ export default function POSPage() {
               <Switch
                 id="cart-toggle"
                 checked={isRoughPad}
-                onCheckedChange={setIsRoughPad}
+                onCheckedChange={(checked) => {
+                  setIsRoughPad(checked);
+                  toast.info(checked ? "Switched to Rough Pad" : "Switched to Main Cart");
+                }}
               />
             </div>
           </div>
@@ -410,7 +423,10 @@ export default function POSPage() {
             </div>
           </div>
           <DialogFooter className="flex-col sm:flex-row gap-2">
-            <Button variant="outline" onClick={() => window.print()}>
+            <Button variant="outline" onClick={() => {
+              toast.info("Preparing receipt for printing...");
+              setTimeout(() => window.print(), 100);
+            }}>
               <Receipt className="w-4 h-4 mr-2" /> Print Receipt
             </Button>
             <Button onClick={handleDispatch}>
