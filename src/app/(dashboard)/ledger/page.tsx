@@ -132,7 +132,7 @@ export default function LedgerPage() {
     const encodedText = encodeURIComponent(messageText);
     const waUrl = `https://wa.me/${cleanPhone}?text=${encodedText}`;
 
-    window.open(waUrl, "_blank");
+    window.open(waUrl, "whatsapp_web");
     toast.success(`Opening WhatsApp chat for ${client.name}...`);
   }
 

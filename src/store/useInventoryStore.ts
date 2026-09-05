@@ -12,6 +12,10 @@ export type InventoryItem = {
   stock: number;
   boxQty: number;
   section: string;
+  category?: "medicine" | "extras";
+  orderNumber?: string;
+  orderDate?: string;
+  billImage?: string;
 };
 
 export const INITIAL_INVENTORY: InventoryItem[] = [

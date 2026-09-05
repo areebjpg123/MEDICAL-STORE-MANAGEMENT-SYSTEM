@@ -11,6 +11,7 @@ import {
   Package,
   ArrowUpDown,
   Calendar,
+  Image as ImageIcon,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -47,6 +48,10 @@ const emptyItem: Omit<InventoryItem, "id"> = {
   stock: 0,
   boxQty: 0,
   section: "OTC",
+  category: "medicine",
+  orderNumber: "",
+  orderDate: "",
+  billImage: "",
 };
 
 export default function ProductsPage() {
@@ -95,6 +100,12 @@ export default function ProductsPage() {
     setDialogOpen(true);
   }
 
+  function openAddExtra() {
+    setEditing(null);
+    setForm({ ...emptyItem, category: "extras" });
+    setDialogOpen(true);
+  }
+
   function openEdit(product: InventoryItem) {
     setEditing(product);
     setForm({
@@ -107,6 +118,10 @@ export default function ProductsPage() {
       stock: product.stock,
       boxQty: product.boxQty,
       section: product.section,
+      category: product.category || "medicine",
+      orderNumber: product.orderNumber || "",
+      orderDate: product.orderDate || "",
+      billImage: product.billImage || "",
     });
     setDialogOpen(true);
   }
@@ -160,6 +175,9 @@ export default function ProductsPage() {
           <Button onClick={openAdd}>
             <Plus className="w-4 h-4 mr-1" /> Add Inventory Item
           </Button>
+          <Button variant="outline" onClick={openAddExtra}>
+            <Plus className="w-4 h-4 mr-1" /> Add Extras
+          </Button>
         </div>
       </div>
 
@@ -189,6 +207,7 @@ export default function ProductsPage() {
                   { key: "salePrice", label: "Sale Price" },
                   { key: "stock", label: "Stock" },
                   { key: "section", label: "Section" },
+                  { key: "orderNumber", label: "Order No." },
                 ].map((col) => (
                   <TableHead
                     key={col.key}
@@ -245,6 +264,19 @@ export default function ProductsPage() {
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className="text-xs">{product.section}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs">{product.orderNumber || "-"}</span>
+                          {product.billImage && (
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => {
+                              const w = window.open("");
+                              if (w) w.document.write(`<img src="${product.billImage}" style="max-width:100%;height:auto;" />`);
+                            }}>
+                              <ImageIcon className="w-4 h-4 text-blue-500" />
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
@@ -307,6 +339,40 @@ export default function ProductsPage() {
             <div className="space-y-2">
               <Label>Box Quantity</Label>
               <Input type="number" value={form.boxQty || ""} onChange={(e) => setForm({ ...form, boxQty: Number(e.target.value) })} />
+            </div>
+            <div className="space-y-2">
+              <Label>Category</Label>
+              <select
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                value={form.category || "medicine"}
+                onChange={(e) => setForm({ ...form, category: e.target.value as "medicine" | "extras" })}
+              >
+                <option value="medicine">Medicine</option>
+                <option value="extras">Extras</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label>Order Number</Label>
+              <Input value={form.orderNumber || ""} onChange={(e) => setForm({ ...form, orderNumber: e.target.value })} placeholder="e.g. ORD-123" />
+            </div>
+            <div className="space-y-2">
+              <Label>Order Date</Label>
+              <Input type="date" value={form.orderDate || ""} onChange={(e) => setForm({ ...form, orderDate: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label>Bill Image</Label>
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => setForm({ ...form, billImage: reader.result as string });
+                    reader.readAsDataURL(file);
+                  }
+                }}
+              />
             </div>
           </div>
           <DialogFooter>

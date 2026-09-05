@@ -34,10 +34,10 @@ const fadeIn = {
 };
 
 export default function SettingsPage() {
-  const [storeName, setStoreName] = useState("Noman Medical Store");
+  const [storeName, setStoreName] = useState("Hassan Medical Store");
   const [storeAddress, setStoreAddress] = useState("Shop #12, Main Bazaar, Lahore");
   const [storePhone, setStorePhone] = useState("0300-1234567");
-  const [receiptHeader, setReceiptHeader] = useState("Noman Medical Store");
+  const [receiptHeader, setReceiptHeader] = useState("Hassan Medical Store");
   const [receiptFooter, setReceiptFooter] = useState("Thank you for your business!");
   const [isDark, setIsDark] = useState(true);
   const [clearDialogOpen, setClearDialogOpen] = useState(false);

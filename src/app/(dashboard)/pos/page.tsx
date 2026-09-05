@@ -180,15 +180,30 @@ export default function POSPage() {
             <h1 className="text-xl font-bold tracking-tight">Point of Sale</h1>
             <p className="text-xs text-muted-foreground">Select inventory items to bill</p>
           </div>
-          <div className="relative flex-1 max-w-xs">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              ref={searchRef}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by name, company, exp..."
-              className="pl-9 text-sm"
-            />
+          <div className="relative flex-1 max-w-[400px] flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                ref={searchRef}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search by name, company, exp..."
+                className="pl-9 text-sm"
+              />
+            </div>
+            <Select onValueChange={(val) => {
+              const item = inventoryItems.find(i => i.id === val);
+              if (item) handleAddItem(item);
+            }}>
+              <SelectTrigger className="w-[130px]">
+                <SelectValue placeholder="Extras" />
+              </SelectTrigger>
+              <SelectContent>
+                {inventoryItems.filter(i => i.category === "extras").map(item => (
+                  <SelectItem key={item.id} value={item.id}>{item.name} (Rs {item.salePrice})</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
