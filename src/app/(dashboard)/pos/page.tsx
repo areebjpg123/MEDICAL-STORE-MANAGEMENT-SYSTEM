@@ -18,6 +18,7 @@ import {
   Calendar,
   Check,
   AlertTriangle,
+  DollarSign,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -172,7 +174,7 @@ export default function POSPage() {
   return (
     <div className="flex flex-col xl:flex-row h-[calc(100vh-0px)] md:h-screen overflow-hidden">
       {/* Left Section — Inventory Search Catalog */}
-      <div className="w-full xl:w-[45%] flex flex-col p-4 lg:p-6 overflow-hidden border-b xl:border-b-0 xl:border-r">
+      <div className="w-full xl:w-[55%] flex flex-col p-4 lg:p-6 overflow-hidden border-b xl:border-b-0 xl:border-r">
         <div className="flex items-center justify-between gap-3 mb-4">
           <div>
             <h1 className="text-xl font-bold tracking-tight">Point of Sale</h1>
@@ -244,266 +246,268 @@ export default function POSPage() {
         </ScrollArea>
       </div>
 
-      {/* Right Section — DUAL CALCULATION PANELS (Official Bill + Working Calculation Pad) */}
-      <div className="flex-1 flex flex-col md:flex-row bg-card/30 overflow-hidden">
-        {/* Panel 1: Official Printable Bill */}
-        <div className="flex-1 flex flex-col border-b md:border-b-0 md:border-r">
-          <div className="p-3.5 border-b bg-card/60 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Receipt className="w-4 h-4 text-primary" />
-              <h2 className="font-bold text-sm">Official Receipt</h2>
-              <Badge variant="default" className="text-xs">
-                {officialCart.length} items
-              </Badge>
-            </div>
-            {officialCart.length > 0 && (
-              <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground" onClick={clearOfficial}>
-                Clear
-              </Button>
-            )}
+{/* Right Section — DUAL CALCULATION PANELS (Tabs instead of side-by-side) */}
+      <div className="w-full xl:w-[45%] flex flex-col bg-card/30 overflow-hidden border-t xl:border-t-0">
+        <Tabs defaultValue="official" className="flex-1 flex flex-col overflow-hidden">
+          <div className="px-3 pt-3 border-b flex-shrink-0 bg-background/50 backdrop-blur-sm z-10">
+            <TabsList className="grid w-full grid-cols-2 h-11">
+              <TabsTrigger value="official" className="text-xs sm:text-sm">
+                <Receipt className="w-4 h-4 mr-2" />
+                Official Receipt
+                <Badge variant="secondary" className="ml-2 bg-background shadow-sm">{officialCart.length}</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="rough" className="text-xs sm:text-sm data-[state=active]:bg-purple-100 data-[state=active]:text-purple-900 dark:data-[state=active]:bg-purple-900/30 dark:data-[state=active]:text-purple-100">
+                <Calculator className="w-4 h-4 mr-2" />
+                Calculation Pad
+                <Badge variant="outline" className="ml-2">{roughCart.length}</Badge>
+              </TabsTrigger>
+            </TabsList>
           </div>
 
-          {/* Official Items List */}
-          <ScrollArea className="flex-1 p-3">
-            <AnimatePresence mode="popLayout">
-              {officialCart.length === 0 ? (
-                <div className="text-center text-muted-foreground py-12 text-sm">
-                  <ShoppingCart className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                  No items in official bill
+          <div className="flex-1 overflow-hidden relative">
+            {/* Panel 1: Official Printable Bill */}
+            <TabsContent value="official" className="absolute inset-0 flex flex-col m-0 border-none data-[state=inactive]:hidden">
+              <div className="p-3 border-b bg-card/60 flex items-center justify-between">
+                <h2 className="font-bold text-sm text-muted-foreground">Official Billing Terminal</h2>
+                {officialCart.length > 0 && (
+                  <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground hover:text-red-500" onClick={clearOfficial}>
+                    Clear Cart
+                  </Button>
+                )}
+              </div>
+
+              {/* Official Items List */}
+              <ScrollArea className="flex-1 p-3">
+                <AnimatePresence mode="popLayout">
+                  {officialCart.length === 0 ? (
+                    <div className="text-center text-muted-foreground py-16 text-sm flex flex-col items-center">
+                      <ShoppingCart className="w-12 h-12 mb-3 opacity-20" />
+                      <p>No items in official bill</p>
+                      <p className="text-xs opacity-60 mt-1">Select items from the inventory to add</p>
+                    </div>
+                  ) : (
+                    officialCart.map((item) => (
+                      <motion.div
+                        key={item.id}
+                        layout
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        className="flex items-center gap-2 py-3 border-b border-border/50"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold truncate">{item.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Rs {item.price} × {item.quantity}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-1.5 bg-background/50 rounded-md p-1 border">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 rounded-md hover:bg-background shadow-sm"
+                            onClick={() => updateOfficialQty(item.id, -1)}
+                          >
+                            <Minus className="w-3 h-3" />
+                          </Button>
+                          <span className="w-8 text-center text-xs font-semibold">{item.quantity}</span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 rounded-md hover:bg-background shadow-sm"
+                            onClick={() => updateOfficialQty(item.id, 1)}
+                          >
+                            <Plus className="w-3 h-3" />
+                          </Button>
+                        </div>
+                        <p className="text-sm font-bold w-20 text-right tabular-nums">
+                          Rs {(item.price * item.quantity).toLocaleString("en-PK")}
+                        </p>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
+                          onClick={() => removeOfficialItem(item.id)}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </motion.div>
+                    ))
+                  )}
+                </AnimatePresence>
+              </ScrollArea>
+
+              {/* Official Totals & Actions */}
+              <div className="p-4 border-t bg-card/80 space-y-3 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)]">
+                <div className="flex items-center gap-2">
+                  <Percent className="w-4 h-4 text-muted-foreground" />
+                  <Input
+                    type="number"
+                    placeholder="Set Official Discount %"
+                    className="h-9 text-sm font-medium"
+                    value={officialDiscountPct || ""}
+                    onChange={(e) => setOfficialDiscountPct(Number(e.target.value))}
+                    min={0}
+                    max={100}
+                  />
                 </div>
-              ) : (
-                officialCart.map((item) => (
-                  <motion.div
-                    key={item.id}
-                    layout
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    className="flex items-center gap-2 py-2 border-b border-border/50"
+
+                <div className="space-y-1.5 text-sm">
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Subtotal</span>
+                    <span>Rs {officialSubtotal.toLocaleString("en-PK")}</span>
+                  </div>
+                  {officialDiscountPct > 0 && (
+                    <div className="flex justify-between text-red-500 font-medium">
+                      <span>Discount ({officialDiscountPct}%)</span>
+                      <span>-Rs {officialDiscountAmt.toLocaleString("en-PK")}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between font-bold text-lg pt-2 border-t mt-1">
+                    <span>Total Amount</span>
+                    <span className="text-primary">Rs {officialTotal.toLocaleString("en-PK")}</span>
+                  </div>
+                </div>
+
+                <Button className="w-full h-11 text-base shadow-md" size="lg" onClick={handleCheckout}>
+                  <Receipt className="w-5 h-5 mr-2" />
+                  Checkout & Print
+                </Button>
+              </div>
+            </TabsContent>
+
+            {/* Panel 2: Working / Calculation Pad */}
+            <TabsContent value="rough" className="absolute inset-0 flex flex-col m-0 border-none data-[state=inactive]:hidden bg-purple-50/50 dark:bg-purple-950/10">
+              <div className="p-3 border-b bg-purple-500/10 flex items-center justify-between">
+                <h2 className="font-bold text-sm text-purple-600 dark:text-purple-400">Working Calculation Pad</h2>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs border-purple-200 text-purple-700 hover:bg-purple-100 dark:border-purple-800 dark:text-purple-300 dark:hover:bg-purple-900/50"
+                    onClick={() => {
+                      syncRoughToOfficial();
+                      toast.success("Applied Calculation Pad to Official Bill!");
+                    }}
                   >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold truncate">{item.name}</p>
-                      <p className="text-[11px] text-muted-foreground">
-                        Rs {item.price} × {item.quantity}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-6 w-6 rounded-full"
-                        onClick={() => updateOfficialQty(item.id, -1)}
-                      >
-                        <Minus className="w-3 h-3" />
-                      </Button>
-                      <span className="w-6 text-center text-xs font-medium">{item.quantity}</span>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-6 w-6 rounded-full"
-                        onClick={() => updateOfficialQty(item.id, 1)}
-                      >
-                        <Plus className="w-3 h-3" />
-                      </Button>
-                    </div>
-                    <p className="text-xs font-bold w-16 text-right">
-                      Rs {(item.price * item.quantity).toLocaleString("en-PK")}
-                    </p>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 text-muted-foreground hover:text-red-400"
-                      onClick={() => removeOfficialItem(item.id)}
-                    >
-                      <X className="w-3 h-3" />
+                    Sync to Official
+                  </Button>
+                  {roughCart.length > 0 && (
+                    <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground hover:text-red-500" onClick={clearRough}>
+                      Clear
                     </Button>
-                  </motion.div>
-                ))
-              )}
-            </AnimatePresence>
-          </ScrollArea>
-
-          {/* Official Totals & Actions */}
-          <div className="p-3 border-t bg-card/40 space-y-2.5">
-            <div className="flex items-center gap-2">
-              <Percent className="w-3.5 h-3.5 text-muted-foreground" />
-              <Input
-                type="number"
-                placeholder="Set Official Discount %"
-                className="h-7 text-xs"
-                value={officialDiscountPct || ""}
-                onChange={(e) => setOfficialDiscountPct(Number(e.target.value))}
-                min={0}
-                max={100}
-              />
-            </div>
-
-            <div className="space-y-1 text-xs">
-              <div className="flex justify-between text-muted-foreground">
-                <span>Subtotal</span>
-                <span>Rs {officialSubtotal.toLocaleString("en-PK")}</span>
-              </div>
-              {officialDiscountPct > 0 && (
-                <div className="flex justify-between text-red-400">
-                  <span>Discount ({officialDiscountPct}%)</span>
-                  <span>-Rs {officialDiscountAmt.toLocaleString("en-PK")}</span>
+                  )}
                 </div>
-              )}
-              <div className="flex justify-between font-bold text-base pt-1">
-                <span>Official Bill</span>
-                <span className="text-primary">Rs {officialTotal.toLocaleString("en-PK")}</span>
               </div>
-            </div>
 
-            <Button className="w-full h-9" size="sm" onClick={handleCheckout}>
-              <Receipt className="w-4 h-4 mr-1.5" />
-              Checkout Official Bill
-            </Button>
-          </div>
-        </div>
-
-        {/* Panel 2: Working / Calculation Pad (Beside Official Bill) */}
-        <div className="flex-1 flex flex-col bg-purple-500/5">
-          <div className="p-3.5 border-b bg-purple-500/10 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Calculator className="w-4 h-4 text-purple-400" />
-              <h2 className="font-bold text-sm text-purple-300">Calculation Pad</h2>
-              <Badge variant="outline" className="text-xs border-purple-500/30 text-purple-300">
-                Draft / Working
-              </Badge>
-            </div>
-            <div className="flex gap-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 text-xs text-purple-300 hover:bg-purple-500/20"
-                onClick={() => {
-                  syncRoughToOfficial();
-                  toast.success("Applied Calculation Pad to Official Bill!");
-                }}
-              >
-                Sync to Official
-              </Button>
-            </div>
-          </div>
-
-          {/* Working Calculation Items List */}
-          <ScrollArea className="flex-1 p-3">
-            <AnimatePresence mode="popLayout">
-              {roughCart.length === 0 ? (
-                <div className="text-center text-muted-foreground py-12 text-sm">
-                  <Calculator className="w-8 h-8 mx-auto mb-2 opacity-30 text-purple-400" />
-                  Calculation Pad Empty
-                </div>
-              ) : (
-                roughCart.map((item) => (
-                  <motion.div
-                    key={item.id}
-                    layout
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="flex items-center gap-2 py-2 border-b border-purple-500/10"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold truncate">{item.name}</p>
-                      <p className="text-[11px] text-muted-foreground">
-                        Rs {item.price} × {item.quantity}
-                      </p>
+              {/* Working Calculation Items List */}
+              <ScrollArea className="flex-1 p-3">
+                <AnimatePresence mode="popLayout">
+                  {roughCart.length === 0 ? (
+                    <div className="text-center text-muted-foreground py-16 text-sm flex flex-col items-center">
+                      <Calculator className="w-12 h-12 mb-3 opacity-20 text-purple-400" />
+                      <p>Calculation Pad Empty</p>
+                      <p className="text-xs opacity-60 mt-1">Use this space for scratchpad calculations</p>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-6 w-6 rounded-full"
-                        onClick={() => updateRoughQty(item.id, -1)}
+                  ) : (
+                    roughCart.map((item) => (
+                      <motion.div
+                        key={item.id}
+                        layout
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        className="flex items-center gap-2 py-3 border-b border-purple-100 dark:border-purple-900/30"
                       >
-                        <Minus className="w-3 h-3" />
-                      </Button>
-                      <span className="w-6 text-center text-xs font-medium">{item.quantity}</span>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-6 w-6 rounded-full"
-                        onClick={() => updateRoughQty(item.id, 1)}
-                      >
-                        <Plus className="w-3 h-3" />
-                      </Button>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold truncate text-purple-900 dark:text-purple-100">{item.name}</p>
+                          <p className="text-xs text-purple-600/70 dark:text-purple-300/70">
+                            Rs {item.price} × {item.quantity}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-1.5 bg-white/60 dark:bg-black/20 rounded-md p-1 border border-purple-100 dark:border-purple-800/50">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 rounded-md hover:bg-white dark:hover:bg-black/40 text-purple-700 dark:text-purple-300"
+                            onClick={() => updateRoughQty(item.id, -1)}
+                          >
+                            <Minus className="w-3 h-3" />
+                          </Button>
+                          <span className="w-8 text-center text-xs font-semibold text-purple-900 dark:text-purple-100">{item.quantity}</span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 rounded-md hover:bg-white dark:hover:bg-black/40 text-purple-700 dark:text-purple-300"
+                            onClick={() => updateRoughQty(item.id, 1)}
+                          >
+                            <Plus className="w-3 h-3" />
+                          </Button>
+                        </div>
+                        <p className="text-sm font-bold w-20 text-right tabular-nums text-purple-900 dark:text-purple-100">
+                          Rs {(item.price * item.quantity).toLocaleString("en-PK")}
+                        </p>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-purple-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
+                          onClick={() => removeRoughItem(item.id)}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </motion.div>
+                    ))
+                  )}
+                </AnimatePresence>
+              </ScrollArea>
+
+              {/* Working Totals */}
+              <div className="p-4 border-t border-purple-200/50 dark:border-purple-900/30 bg-purple-100/50 dark:bg-purple-900/20 space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-purple-700/70 dark:text-purple-300/70">Set Discount %</Label>
+                    <div className="relative">
+                      <Percent className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-purple-400" />
+                      <Input
+                        type="number"
+                        className="pl-8 h-9 bg-white/60 dark:bg-black/20 border-purple-200 dark:border-purple-800 focus-visible:ring-purple-400"
+                        value={roughDiscountPct || ""}
+                        onChange={(e) => setRoughDiscountPct(Number(e.target.value))}
+                      />
                     </div>
-                    <p className="text-xs font-bold w-16 text-right text-purple-300">
-                      Rs {(item.price * item.quantity).toLocaleString("en-PK")}
-                    </p>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 text-muted-foreground hover:text-red-400"
-                      onClick={() => removeRoughItem(item.id)}
-                    >
-                      <X className="w-3 h-3" />
-                    </Button>
-                  </motion.div>
-                ))
-              )}
-            </AnimatePresence>
-          </ScrollArea>
-
-          {/* Working Calculation Set Discount & Totals */}
-          <div className="p-3 border-t bg-purple-500/10 space-y-2.5">
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-1">
-                <Label className="text-[11px] text-muted-foreground">Set Discount %</Label>
-                <Input
-                  type="number"
-                  placeholder="%"
-                  className="h-7 text-xs"
-                  value={roughDiscountPct || ""}
-                  onChange={(e) => setRoughDiscountPct(Number(e.target.value))}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-[11px] text-muted-foreground">Set Flat Discount (Rs)</Label>
-                <Input
-                  type="number"
-                  placeholder="Rs"
-                  className="h-7 text-xs"
-                  value={roughDiscountFixed || ""}
-                  onChange={(e) => setRoughDiscountFixed(Number(e.target.value))}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1 text-xs">
-              <div className="flex justify-between text-muted-foreground">
-                <span>Subtotal</span>
-                <span>Rs {roughSubtotal.toLocaleString("en-PK")}</span>
-              </div>
-              {roughDiscountPct > 0 && (
-                <div className="flex justify-between text-purple-300">
-                  <span>Pct Discount ({roughDiscountPct}%)</span>
-                  <span>-Rs {roughPctDiscountAmt.toLocaleString("en-PK")}</span>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-purple-700/70 dark:text-purple-300/70">Set Flat Discount (Rs)</Label>
+                    <div className="relative">
+                      <DollarSign className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-purple-400" />
+                      <Input
+                        type="number"
+                        className="pl-8 h-9 bg-white/60 dark:bg-black/20 border-purple-200 dark:border-purple-800 focus-visible:ring-purple-400"
+                        value={roughDiscountFixed || ""}
+                        onChange={(e) => setRoughDiscountFixed(Number(e.target.value))}
+                      />
+                    </div>
+                  </div>
                 </div>
-              )}
-              {roughDiscountFixed > 0 && (
-                <div className="flex justify-between text-purple-300">
-                  <span>Flat Discount</span>
-                  <span>-Rs {roughDiscountFixed.toLocaleString("en-PK")}</span>
-                </div>
-              )}
-              <div className="flex justify-between font-bold text-base pt-1 border-t border-purple-500/20">
-                <span>Working Calculation Total</span>
-                <span className="text-purple-300">Rs {roughTotal.toLocaleString("en-PK")}</span>
-              </div>
-            </div>
 
-            <Button
-              variant="outline"
-              className="w-full h-9 text-xs border-purple-500/30 text-purple-300 hover:bg-purple-500/20"
-              onClick={() => handleAddExtra("rough")}
-            >
-              <Plus className="w-3.5 h-3.5 mr-1" /> Add Extra Charge to Calculation
-            </Button>
+                <div className="space-y-1.5 text-sm pt-2">
+                  <div className="flex justify-between text-purple-700/80 dark:text-purple-300/80">
+                    <span>Subtotal</span>
+                    <span>Rs {roughSubtotal.toLocaleString("en-PK")}</span>
+                  </div>
+                  <div className="flex justify-between font-bold text-lg pt-1 text-purple-900 dark:text-purple-100">
+                    <span>Working Total</span>
+                    <span>Rs {roughTotal.toLocaleString("en-PK")}</span>
+                  </div>
+                </div>
+                
+                <Button variant="outline" className="w-full h-10 border-purple-200 text-purple-700 hover:bg-purple-100 dark:border-purple-800 dark:text-purple-300 dark:hover:bg-purple-900/50" onClick={() => handleAddExtra("rough")}>
+                  <Plus className="w-4 h-4 mr-2" /> Add Extra Charge
+                </Button>
+              </div>
+            </TabsContent>
           </div>
-        </div>
+        </Tabs>
       </div>
 
       {/* Checkout Dialog */}
