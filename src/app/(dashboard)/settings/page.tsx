@@ -173,21 +173,6 @@ export default function SettingsPage() {
         </Card>
       </motion.div>
 
-      {/* About */}
-      <motion.div {...fadeIn} transition={{ delay: 0.2 }}>
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Info className="w-4 h-4 text-primary" /> About
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm text-muted-foreground space-y-1">
-            <p>Medical Store ERP v2.0.0</p>
-            <p>Built with Next.js, Shadcn UI, and Framer Motion</p>
-            <p>Offline-first architecture with IndexedDB</p>
-          </CardContent>
-        </Card>
-      </motion.div>
 
       <Separator />
 
