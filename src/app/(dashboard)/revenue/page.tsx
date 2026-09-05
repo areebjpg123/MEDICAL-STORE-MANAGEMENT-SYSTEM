@@ -169,7 +169,7 @@ export default function RevenuePage() {
                   <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12 }} width={60} tickFormatter={(value) => `Rs ${value}`} />
                   <Tooltip 
                     contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                    formatter={(value: number) => [`Rs ${value.toLocaleString("en-PK")}`, undefined]}
+                    formatter={(value: any) => [`Rs ${Number(value).toLocaleString("en-PK")}`, undefined]}
                   />
                   <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
                   <Area type="monotone" dataKey="sales" name="Revenue" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorSales)" />
@@ -202,7 +202,7 @@ export default function RevenuePage() {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value: number) => [`Rs ${value.toLocaleString("en-PK")}`, undefined]} />
+                  <Tooltip formatter={(value: any) => [`Rs ${Number(value).toLocaleString("en-PK")}`, undefined]} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
