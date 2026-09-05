@@ -49,8 +49,7 @@ function NavContent({ pathname }: { pathname: string }) {
     <div className="flex flex-col h-full">
       {/* Brand */}
       <div className="flex items-center gap-3 px-4 py-6">
-        <img src="/logo-light.png" alt="MediStore ERP" className="h-10 dark:hidden" />
-        <img src="/logo-dark.png" alt="MediStore ERP" className="h-10 hidden dark:block" />
+        <img src="/logo.png" alt="MediStore ERP" className="h-10 dark:bg-white dark:p-1 dark:rounded-md" />
       </div>
 
       <Separator className="mb-2" />
@@ -137,8 +136,7 @@ export function AppSidebar() {
           </SheetContent>
         </Sheet>
         <div className="flex items-center gap-2">
-          <img src="/logo-light.png" alt="MediStore ERP" className="h-6 dark:hidden" />
-          <img src="/logo-dark.png" alt="MediStore ERP" className="h-6 hidden dark:block" />
+          <img src="/logo.png" alt="MediStore ERP" className="h-7 dark:bg-white dark:p-1 dark:rounded-md" />
         </div>
       </div>
     </>
