@@ -39,17 +39,12 @@ export default function SettingsPage() {
   const [storePhone, setStorePhone] = useState("0300-1234567");
   const [receiptHeader, setReceiptHeader] = useState("Hassan Medical Store");
   const [receiptFooter, setReceiptFooter] = useState("Thank you for your business!");
-  const [isDark, setIsDark] = useState(true);
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
 
   function handleSave() {
     toast.success("Settings saved successfully");
   }
 
-  function toggleDark(checked: boolean) {
-    setIsDark(checked);
-    document.documentElement.classList.toggle("dark", checked);
-  }
 
   function handleExport() {
     toast.info("Exporting data...");
@@ -122,28 +117,6 @@ export default function SettingsPage() {
         </Card>
       </motion.div>
 
-      {/* Theme */}
-      <motion.div {...fadeIn} transition={{ delay: 0.1 }}>
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              {isDark ? <Moon className="w-4 h-4 text-primary" /> : <Sun className="w-4 h-4 text-primary" />}
-              Theme
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium">Dark Mode</p>
-                <p className="text-xs text-muted-foreground">
-                  Toggle between dark and light themes
-                </p>
-              </div>
-              <Switch checked={isDark} onCheckedChange={toggleDark} />
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
 
       {/* Data Management */}
       <motion.div {...fadeIn} transition={{ delay: 0.15 }}>
