@@ -76,6 +76,7 @@ export default function POSPage() {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [clientName, setClientName] = useState("");
   const [paymentTerms, setPaymentTerms] = useState("cash");
+  const [deliveryMethod, setDeliveryMethod] = useState<"shop" | "home_delivery">("shop");
   const [phone, setPhone] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -95,6 +96,7 @@ export default function POSPage() {
       id: product.id,
       name: product.name,
       price: product.salePrice,
+      costPrice: product.costPrice,
       quantity: 1,
       discount: 0,
     };
@@ -150,10 +152,12 @@ export default function POSPage() {
       clientName: clientName || "Walk-in Customer",
       total: officialTotal,
       originalTotal: officialSubtotal,
+      deliveryMethod,
       items: officialCart.map((i) => ({
         name: i.name,
         qty: i.quantity,
         price: i.price,
+        costPrice: i.costPrice,
       })),
     });
 
@@ -570,6 +574,18 @@ export default function POSPage() {
                       <CreditCard className="w-4 h-4" /> Credit
                     </span>
                   </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Delivery Method</Label>
+              <Select value={deliveryMethod} onValueChange={(v) => setDeliveryMethod(v as "shop" | "home_delivery")}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="shop">Shop Sales</SelectItem>
+                  <SelectItem value="home_delivery">Home Delivery</SelectItem>
                 </SelectContent>
               </Select>
             </div>

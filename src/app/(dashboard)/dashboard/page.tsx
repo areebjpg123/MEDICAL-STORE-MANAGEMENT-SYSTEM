@@ -189,31 +189,37 @@ export default function DashboardPage() {
       >
         {statsData.map((stat) => {
           const Icon = stat.icon;
+          const isRevenue = stat.title === "Today's Revenue";
+          
+          const cardContent = (
+            <Card className={`relative overflow-hidden ${isRevenue ? "hover:border-primary/50 cursor-pointer transition-colors" : ""} ${stat.isAlert && expiringItems.length > 0 ? "border-2 border-red-500 bg-red-500/10 shadow-lg shadow-red-500/20" : ""}`}>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className={`text-sm font-medium ${stat.isAlert && expiringItems.length > 0 ? "text-red-400 font-bold" : "text-muted-foreground"}`}>
+                  {stat.title}
+                </CardTitle>
+                <div className={`flex items-center justify-center w-8 h-8 rounded-md ${stat.isAlert && expiringItems.length > 0 ? "bg-red-500/20 text-red-500" : "bg-primary/10 text-primary"}`}>
+                  <Icon className={`w-4 h-4 ${stat.isAlert && expiringItems.length > 0 ? "animate-pulse" : ""}`} />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className={`text-2xl font-bold ${stat.isAlert && expiringItems.length > 0 ? "text-red-500" : ""}`}>{stat.value}</div>
+                <div className="flex items-center mt-1 text-xs">
+                  {stat.trend === "up" ? (
+                    <ArrowUpRight className="w-3 h-3 text-green-500 mr-1" />
+                  ) : (
+                    <ArrowDownRight className="w-3 h-3 text-red-500 mr-1" />
+                  )}
+                  <span className={stat.trend === "up" ? "text-green-500" : "text-red-500 font-semibold"}>
+                    {stat.change}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          );
+
           return (
             <motion.div key={stat.title} variants={item}>
-              <Card className={`relative overflow-hidden ${stat.isAlert && expiringItems.length > 0 ? "border-2 border-red-500 bg-red-500/10 shadow-lg shadow-red-500/20" : ""}`}>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className={`text-sm font-medium ${stat.isAlert && expiringItems.length > 0 ? "text-red-400 font-bold" : "text-muted-foreground"}`}>
-                    {stat.title}
-                  </CardTitle>
-                  <div className={`flex items-center justify-center w-8 h-8 rounded-md ${stat.isAlert && expiringItems.length > 0 ? "bg-red-500/20 text-red-500" : "bg-primary/10 text-primary"}`}>
-                    <Icon className={`w-4 h-4 ${stat.isAlert && expiringItems.length > 0 ? "animate-pulse" : ""}`} />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className={`text-2xl font-bold ${stat.isAlert && expiringItems.length > 0 ? "text-red-500" : ""}`}>{stat.value}</div>
-                  <div className="flex items-center mt-1 text-xs">
-                    {stat.trend === "up" ? (
-                      <ArrowUpRight className="w-3 h-3 text-green-500 mr-1" />
-                    ) : (
-                      <ArrowDownRight className="w-3 h-3 text-red-500 mr-1" />
-                    )}
-                    <span className={stat.trend === "up" ? "text-green-500" : "text-red-500 font-semibold"}>
-                      {stat.change}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
+              {isRevenue ? <Link href="/revenue">{cardContent}</Link> : cardContent}
             </motion.div>
           );
         })}
