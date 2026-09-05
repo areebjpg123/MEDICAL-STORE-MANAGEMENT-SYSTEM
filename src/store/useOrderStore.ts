@@ -5,6 +5,7 @@ export type OrderItem = {
   name: string;
   qty: number;
   price: number;
+  costPrice?: number;
   returnedQty?: number;
 };
 
@@ -15,6 +16,8 @@ export type Order = {
   date: string;
   total: number;
   originalTotal: number;
+  costTotal?: number;
+  deliveryMethod?: "shop" | "home_delivery";
   status: "DISPATCHED" | "PENDING" | "CANCELLED" | "REPLACED";
   items: OrderItem[];
 };
@@ -27,11 +30,13 @@ export const INITIAL_ORDERS: Order[] = [
     date: "2026-09-05 14:30",
     total: 1250,
     originalTotal: 1250,
+    costTotal: 840,
+    deliveryMethod: "shop",
     status: "DISPATCHED",
     items: [
-      { name: "Panadol 500mg", qty: 2, price: 120 },
-      { name: "Brufen 400mg", qty: 1, price: 180 },
-      { name: "Disprin", qty: 3, price: 45 },
+      { name: "Panadol 500mg", qty: 2, price: 120, costPrice: 80 },
+      { name: "Brufen 400mg", qty: 1, price: 180, costPrice: 120 },
+      { name: "Disprin", qty: 3, price: 45, costPrice: 25 },
     ],
   },
   {
@@ -124,6 +129,8 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         hour12: false,
       }),
       status: "DISPATCHED",
+      deliveryMethod: newOrderData.deliveryMethod || "shop",
+      costTotal: newOrderData.items.reduce((sum, item) => sum + (item.costPrice || item.price * 0.7) * item.qty, 0),
     };
     set((state) => ({
       orders: [newOrder, ...state.orders],
