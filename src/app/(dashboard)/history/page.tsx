@@ -55,6 +55,7 @@ export default function HistoryPage() {
 
   // Replacement modal state
   const [replaceModalOpen, setReplaceModalOpen] = useState(false);
+  const [printingOrder, setPrintingOrder] = useState<Order | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [returnMap, setReturnMap] = useState<{ [itemName: string]: number }>({});
 
@@ -232,6 +233,7 @@ export default function HistoryPage() {
                               size="sm"
                               onClick={(e) => {
                                 e.stopPropagation();
+                                setPrintingOrder(order);
                                 toast.info("Preparing receipt for printing...");
                                 setTimeout(() => window.print(), 100);
                               }}
@@ -340,6 +342,49 @@ export default function HistoryPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+
+      {/* Hidden Printable Thermal Receipt */}
+      {printingOrder && (
+        <div className="hidden print:block receipt-printable bg-white text-black p-4 text-[12px] leading-tight font-mono w-[80mm] absolute top-0 left-0">
+          <div className="text-center mb-4">
+            <h2 className="text-xl font-bold mb-1">MediStore ERP</h2>
+            <p>Client: {printingOrder.clientName}</p>
+            <p>Receipt: {printingOrder.receiptNumber}</p>
+            <p>Date: {printingOrder.date}</p>
+          </div>
+          <div className="border-b border-black border-dashed mb-2 pb-1 flex justify-between font-bold">
+            <span className="w-1/2">Medicine</span>
+            <span className="w-1/6 text-center">Qty</span>
+            <span className="w-1/3 text-right">Total</span>
+          </div>
+          <div className="space-y-1 mb-2">
+            {printingOrder.items.map((item, idx) => (
+              <div key={idx} className="flex justify-between">
+                <span className="w-1/2 truncate pr-1">{item.name}</span>
+                <span className="w-1/6 text-center">{item.qty}</span>
+                <span className="w-1/3 text-right">{(item.price * item.qty).toLocaleString()}</span>
+              </div>
+            ))}
+          </div>
+          <div className="border-t border-black border-dashed pt-2 space-y-1">
+            <div className="flex justify-between font-bold text-sm mt-1">
+              <span>Total Amount:</span>
+              <span>Rs {printingOrder.total.toLocaleString()}</span>
+            </div>
+            {printingOrder.status === 'REPLACED' && (
+              <div className="flex justify-between font-bold text-red-600 mt-1">
+                <span>Status:</span>
+                <span>RETURN/REPLACEMENT</span>
+              </div>
+            )}
+          </div>
+          <div className="text-center mt-6 text-[10px]">
+            <p>Thank you for visiting MediStore!</p>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
