@@ -9,6 +9,10 @@ import {
   RotateCcw,
   Eye,
   Filter,
+  Plus,
+  Minus,
+  CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -21,44 +25,40 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
-
-type OrderItem = { name: string; qty: number; price: number };
-
-type Order = {
-  id: string;
-  receiptNumber: string;
-  clientName: string;
-  date: string;
-  total: number;
-  status: "DISPATCHED" | "PENDING" | "CANCELLED";
-  items: OrderItem[];
-};
-
-const MOCK_ORDERS: Order[] = [
-  { id: "1", receiptNumber: "RCP-001", clientName: "Walk-in", date: "2024-01-15 14:30", total: 1250, status: "DISPATCHED", items: [{ name: "Panadol 500mg", qty: 2, price: 120 }, { name: "Brufen 400mg", qty: 1, price: 180 }, { name: "Disprin", qty: 3, price: 45 }] },
-  { id: "2", receiptNumber: "RCP-002", clientName: "Ali Medical", date: "2024-01-15 13:15", total: 8500, status: "DISPATCHED", items: [{ name: "Augmentin 625mg", qty: 5, price: 850 }, { name: "Amoxil 250mg", qty: 10, price: 210 }, { name: "Risek 20mg", qty: 3, price: 380 }] },
-  { id: "3", receiptNumber: "RCP-003", clientName: "City Pharmacy", date: "2024-01-15 11:00", total: 3200, status: "PENDING", items: [{ name: "Ponstan 500mg", qty: 5, price: 260 }, { name: "Flagyl 400mg", qty: 10, price: 95 }] },
-  { id: "4", receiptNumber: "RCP-004", clientName: "Walk-in", date: "2024-01-15 10:30", total: 450, status: "DISPATCHED", items: [{ name: "Calpol Syrup", qty: 1, price: 150 }, { name: "Rigix 10mg", qty: 2, price: 125 }] },
-  { id: "5", receiptNumber: "RCP-005", clientName: "Hameed Medicos", date: "2024-01-14 16:00", total: 6100, status: "DISPATCHED", items: [{ name: "Ventolin Inhaler", qty: 2, price: 650 }, { name: "Nexium 40mg", qty: 4, price: 580 }, { name: "Arinac Forte", qty: 8, price: 195 }] },
-  { id: "6", receiptNumber: "RCP-006", clientName: "Walk-in", date: "2024-01-14 09:45", total: 520, status: "CANCELLED", items: [{ name: "Lipitor 20mg", qty: 1, price: 520 }] },
-];
+import { useOrderStore, Order } from "@/store/useOrderStore";
+import { Separator } from "@/components/ui/separator";
 
 function statusColor(status: string) {
   switch (status) {
     case "DISPATCHED": return "bg-green-500/15 text-green-400 border-green-500/20";
     case "PENDING": return "bg-yellow-500/15 text-yellow-400 border-yellow-500/20";
     case "CANCELLED": return "bg-red-500/15 text-red-400 border-red-500/20";
+    case "REPLACED": return "bg-purple-500/15 text-purple-400 border-purple-500/20";
     default: return "";
   }
 }
 
 export default function HistoryPage() {
+  const { orders, processReplacement } = useOrderStore();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  const filtered = MOCK_ORDERS.filter((o) => {
+  // Replacement modal state
+  const [replaceModalOpen, setReplaceModalOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [returnMap, setReturnMap] = useState<{ [itemName: string]: number }>({});
+
+  const filtered = orders.filter((o) => {
     const matchSearch =
       o.receiptNumber.toLowerCase().includes(search.toLowerCase()) ||
       o.clientName.toLowerCase().includes(search.toLowerCase());
@@ -66,8 +66,55 @@ export default function HistoryPage() {
     return matchSearch && matchStatus;
   });
 
-  function handleReturn(order: Order) {
-    toast.info(`Return process initiated for ${order.receiptNumber}. Full returns modal coming soon.`);
+  function openReplaceModal(order: Order) {
+    setSelectedOrder(order);
+    const initialReturns: { [itemName: string]: number } = {};
+    order.items.forEach((i) => {
+      initialReturns[i.name] = 0;
+    });
+    setReturnMap(initialReturns);
+    setReplaceModalOpen(true);
+  }
+
+  function handleReplaceWholeOrder() {
+    if (!selectedOrder) return;
+    const fullReturns: { [itemName: string]: number } = {};
+    selectedOrder.items.forEach((i) => {
+      fullReturns[i.name] = i.qty;
+    });
+    setReturnMap(fullReturns);
+    toast.info("All items selected for return. Click 'Confirm Replacement' to submit.");
+  }
+
+  function updateReturnQty(itemName: string, maxQty: number, delta: number) {
+    setReturnMap((prev) => {
+      const current = prev[itemName] || 0;
+      const next = Math.max(0, Math.min(maxQty, current + delta));
+      return { ...prev, [itemName]: next };
+    });
+  }
+
+  const calculatedRefundTotal = selectedOrder
+    ? selectedOrder.items.reduce((sum, i) => sum + (returnMap[i.name] || 0) * i.price, 0)
+    : 0;
+
+  function confirmReplacementSubmit() {
+    if (!selectedOrder) return;
+    if (calculatedRefundTotal === 0) {
+      toast.error("Please select at least 1 item or quantity to return.");
+      return;
+    }
+
+    const { refundTotal, itemsRestockedCount } = processReplacement(selectedOrder.id, returnMap);
+
+    toast.success(
+      `Replacement complete! ${itemsRestockedCount} items restocked to inventory. Rs ${refundTotal.toLocaleString(
+        "en-PK"
+      )} refunded and deducted from total revenue.`
+    );
+
+    setReplaceModalOpen(false);
+    setSelectedOrder(null);
   }
 
   return (
@@ -75,7 +122,7 @@ export default function HistoryPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Order History</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          View and manage past orders
+          View past sales and process itemized medicine replacements
         </p>
       </div>
 
@@ -98,6 +145,7 @@ export default function HistoryPage() {
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
             <SelectItem value="DISPATCHED">Dispatched</SelectItem>
+            <SelectItem value="REPLACED">Replaced</SelectItem>
             <SelectItem value="PENDING">Pending</SelectItem>
             <SelectItem value="CANCELLED">Cancelled</SelectItem>
           </SelectContent>
@@ -156,22 +204,27 @@ export default function HistoryPage() {
                             <div key={idx} className="flex justify-between text-sm">
                               <span className="text-muted-foreground">
                                 {item.name} × {item.qty}
+                                {item.returnedQty && item.returnedQty > 0 ? (
+                                  <span className="text-purple-400 text-xs ml-2 font-medium">
+                                    ({item.returnedQty} returned)
+                                  </span>
+                                ) : null}
                               </span>
                               <span>Rs {(item.price * item.qty).toLocaleString("en-PK")}</span>
                             </div>
                           ))}
                           <div className="flex gap-2 pt-3">
-                            {order.status === "DISPATCHED" && (
+                            {(order.status === "DISPATCHED" || order.status === "REPLACED") && (
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="text-red-400 border-red-500/20"
+                                className="text-purple-400 border-purple-500/20 hover:bg-purple-500/10"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleReturn(order);
+                                  openReplaceModal(order);
                                 }}
                               >
-                                <RotateCcw className="w-3 h-3 mr-1" /> Process Return
+                                <RotateCcw className="w-3 h-3 mr-1" /> Replace
                               </Button>
                             )}
                             <Button
@@ -196,6 +249,97 @@ export default function HistoryPage() {
           ))}
         </AnimatePresence>
       </div>
+
+      {/* Replacement Modal */}
+      <Dialog open={replaceModalOpen} onOpenChange={setReplaceModalOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <RotateCcw className="w-5 h-5 text-purple-400" />
+              Order Replacement & Return Pad
+            </DialogTitle>
+            <DialogDescription>
+              {selectedOrder ? `Receipt: ${selectedOrder.receiptNumber} (${selectedOrder.clientName})` : ""}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-muted-foreground">Select medicines/tablets to return:</span>
+              <Button variant="secondary" size="sm" className="text-xs h-7" onClick={handleReplaceWholeOrder}>
+                Replace Whole Order
+              </Button>
+            </div>
+
+            <div className="border rounded-lg p-3 space-y-3 bg-card/40 max-h-[260px] overflow-y-auto">
+              {selectedOrder?.items.map((item) => {
+                const returnQty = returnMap[item.name] || 0;
+                return (
+                  <div key={item.name} className="flex items-center justify-between gap-3 text-sm py-1 border-b border-border/50 last:border-0">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{item.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Bought: {item.qty} | Unit: Rs {item.price}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-7 w-7 rounded-full"
+                        onClick={() => updateReturnQty(item.name, item.qty, -1)}
+                        disabled={returnQty <= 0}
+                      >
+                        <Minus className="w-3 h-3" />
+                      </Button>
+                      <span className="w-8 text-center font-bold text-purple-400">
+                        {returnQty}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-7 w-7 rounded-full"
+                        onClick={() => updateReturnQty(item.name, item.qty, 1)}
+                        disabled={returnQty >= item.qty}
+                      >
+                        <Plus className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <Separator />
+
+            <div className="space-y-1.5 text-sm">
+              <div className="flex justify-between text-muted-foreground">
+                <span>Calculated Refund Total:</span>
+                <span className="font-bold text-red-400">
+                  -Rs {calculatedRefundTotal.toLocaleString("en-PK")}
+                </span>
+              </div>
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Inventory Restock:</span>
+                <span className="text-green-400">
+                  +{Object.values(returnMap).reduce((a, b) => a + b, 0)} units will be returned to stock
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setReplaceModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={confirmReplacementSubmit} className="bg-purple-600 hover:bg-purple-700">
+              <CheckCircle2 className="w-4 h-4 mr-1" />
+              Confirm Replacement & Refund
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

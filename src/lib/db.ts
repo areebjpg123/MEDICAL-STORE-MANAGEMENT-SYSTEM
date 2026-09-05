@@ -5,7 +5,7 @@ interface POSDB extends DBSchema {
     key: string;
     value: {
       id: string;
-      barcode: string;
+      expDate: string;
       name: string;
       sale_price: number;
       stock_quantity: number;
@@ -15,7 +15,7 @@ interface POSDB extends DBSchema {
       formula_name?: string;
       cost_price?: number;
     };
-    indexes: { 'by-barcode': string, 'by-name': string };
+    indexes: { 'by-expdate': string, 'by-name': string };
   };
   orders: {
     key: string;
@@ -48,7 +48,7 @@ export function getDB() {
       upgrade(db) {
         if (!db.objectStoreNames.contains('products')) {
           const productStore = db.createObjectStore('products', { keyPath: 'id' });
-          productStore.createIndex('by-barcode', 'barcode');
+          productStore.createIndex('by-expdate', 'expDate');
           productStore.createIndex('by-name', 'name');
         }
         if (!db.objectStoreNames.contains('orders')) {

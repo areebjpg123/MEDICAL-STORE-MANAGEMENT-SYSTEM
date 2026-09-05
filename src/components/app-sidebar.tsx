@@ -24,7 +24,7 @@ import { Separator } from "@/components/ui/separator";
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/pos", label: "Point of Sale", icon: ShoppingCart },
-  { href: "/products", label: "Products", icon: Package },
+  { href: "/products", label: "Inventory", icon: Package },
   { href: "/ledger", label: "Ledger", icon: BookOpen },
   { href: "/history", label: "History", icon: History },
   { href: "/settings", label: "Settings", icon: Settings },
@@ -57,7 +57,7 @@ function NavContent({ pathname }: { pathname: string }) {
       {/* Navigation */}
       <nav className="flex-1 px-3 space-y-1">
         {navItems.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
           const Icon = item.icon;
           return (
             <Link key={item.href} href={item.href}>

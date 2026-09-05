@@ -13,6 +13,11 @@ import {
   CreditCard,
   Banknote,
   Percent,
+  Calculator,
+  ArrowRight,
+  Calendar,
+  Check,
+  AlertTriangle,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -37,110 +42,83 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-
-type Product = {
-  id: string;
-  name: string;
-  company: string;
-  salePrice: number;
-  stock: number;
-  barcode: string;
-};
-
-type CartItem = {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-  discount: number;
-};
-
-const MOCK_PRODUCTS: Product[] = [
-  { id: "1", name: "Panadol 500mg", company: "GSK", salePrice: 120, stock: 45, barcode: "8901234001" },
-  { id: "2", name: "Brufen 400mg", company: "Abbott", salePrice: 180, stock: 32, barcode: "8901234002" },
-  { id: "3", name: "Augmentin 625mg", company: "GSK", salePrice: 850, stock: 18, barcode: "8901234003" },
-  { id: "4", name: "Flagyl 400mg", company: "Sanofi", salePrice: 95, stock: 60, barcode: "8901234004" },
-  { id: "5", name: "Amoxil 250mg", company: "GSK", salePrice: 210, stock: 25, barcode: "8901234005" },
-  { id: "6", name: "Disprin", company: "Reckitt", salePrice: 45, stock: 100, barcode: "8901234006" },
-  { id: "7", name: "Ponstan 500mg", company: "Pfizer", salePrice: 260, stock: 15, barcode: "8901234007" },
-  { id: "8", name: "Risek 20mg", company: "Getz", salePrice: 380, stock: 22, barcode: "8901234008" },
-  { id: "9", name: "Calpol Syrup", company: "GSK", salePrice: 150, stock: 35, barcode: "8901234009" },
-  { id: "10", name: "Ventolin Inhaler", company: "GSK", salePrice: 650, stock: 8, barcode: "8901234010" },
-  { id: "11", name: "Rigix 10mg", company: "Sami", salePrice: 125, stock: 40, barcode: "8901234011" },
-  { id: "12", name: "Arinac Forte", company: "Abbott", salePrice: 195, stock: 55, barcode: "8901234012" },
-];
+import { useInventoryStore, InventoryItem } from "@/store/useInventoryStore";
+import { useOrderStore } from "@/store/useOrderStore";
+import { useCartStore, CartItem } from "@/store/useCartStore";
+import { parseExpiryDate } from "@/lib/expiry";
 
 export default function POSPage() {
+  const { items: inventoryItems, deductStockById } = useInventoryStore();
+  const { addOrder } = useOrderStore();
+  const {
+    officialCart,
+    roughCart,
+    officialDiscountPct,
+    roughDiscountPct,
+    roughDiscountFixed,
+    addToOfficial,
+    addToRough,
+    updateOfficialQty,
+    updateRoughQty,
+    removeOfficialItem,
+    removeRoughItem,
+    setOfficialDiscountPct,
+    setRoughDiscountPct,
+    setRoughDiscountFixed,
+    clearOfficial,
+    clearRough,
+    syncRoughToOfficial,
+  } = useCartStore();
+
   const [search, setSearch] = useState("");
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [roughCart, setRoughCart] = useState<CartItem[]>([]);
-  const [isRoughPad, setIsRoughPad] = useState(false);
-  const [overallDiscount, setOverallDiscount] = useState(0);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [clientName, setClientName] = useState("");
   const [paymentTerms, setPaymentTerms] = useState("cash");
   const [phone, setPhone] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
 
-  const activeCart = isRoughPad ? roughCart : cart;
-  const setActiveCart = isRoughPad ? setRoughCart : setCart;
-
   useEffect(() => {
     searchRef.current?.focus();
   }, []);
 
-  const filtered = MOCK_PRODUCTS.filter(
+  const filtered = inventoryItems.filter(
     (p) =>
       p.name.toLowerCase().includes(search.toLowerCase()) ||
       p.company.toLowerCase().includes(search.toLowerCase()) ||
-      p.barcode.includes(search)
+      p.expDate.includes(search)
   );
 
-  function addToCart(product: Product) {
-    setActiveCart((prev) => {
-      const existing = prev.find((i) => i.id === product.id);
-      if (existing) {
-        return prev.map((i) =>
-          i.id === product.id ? { ...i, quantity: i.quantity + 1 } : i
-        );
-      }
-      return [
-        ...prev,
-        { id: product.id, name: product.name, price: product.salePrice, quantity: 1, discount: 0 },
-      ];
-    });
-    toast.success(`Added ${product.name}`, { duration: 1000 });
+  function handleAddItem(product: InventoryItem) {
+    const item: CartItem = {
+      id: product.id,
+      name: product.name,
+      price: product.salePrice,
+      quantity: 1,
+      discount: 0,
+    };
+    addToOfficial(item);
+    addToRough(item);
+    toast.success(`Added ${product.name} to Official & Calculation Pad`, { duration: 1000 });
   }
 
-  function updateQty(id: string, delta: number) {
-    setActiveCart((prev) => {
-      const item = prev.find((i) => i.id === id);
-      if (item) {
-        if (item.quantity + delta === 0) {
-          toast.info(`${item.name} removed from cart`);
-        }
-      }
-      return prev
-        .map((i) => (i.id === id ? { ...i, quantity: Math.max(0, i.quantity + delta) } : i))
-        .filter((i) => i.quantity > 0);
-    });
-  }
+  // Official Calculations
+  const officialSubtotal = officialCart.reduce((sum, i) => sum + i.price * i.quantity, 0);
+  const officialDiscountAmt = (officialSubtotal * officialDiscountPct) / 100;
+  const officialTotal = officialSubtotal - officialDiscountAmt;
 
-  function removeItem(id: string) {
-    setActiveCart((prev) => {
-      const item = prev.find((i) => i.id === id);
-      if (item) toast.info(`${item.name} removed from cart`);
-      return prev.filter((i) => i.id !== id);
-    });
-  }
+  // Working Calculation Pad Calculations
+  const roughSubtotal = roughCart.reduce((sum, i) => sum + i.price * i.quantity, 0);
+  const roughPctDiscountAmt = (roughSubtotal * roughDiscountPct) / 100;
+  const roughTotal = Math.max(0, roughSubtotal - roughPctDiscountAmt - roughDiscountFixed);
 
-  function addExtra() {
-    const name = prompt("Extra item name (e.g. Delivery Fee):");
+  function handleAddExtra(target: "official" | "rough") {
+    const name = prompt("Extra charge name (e.g. Delivery Fee):");
     if (!name) return;
     const amountStr = prompt("Amount (Rs):");
     if (!amountStr) return;
     const amount = parseFloat(amountStr);
     if (isNaN(amount)) return;
+
     const extraItem: CartItem = {
       id: `extra-${Date.now()}`,
       name,
@@ -148,228 +126,383 @@ export default function POSPage() {
       quantity: 1,
       discount: 0,
     };
-    setActiveCart((prev) => [...prev, extraItem]);
+
+    if (target === "official") addToOfficial(extraItem);
+    else addToRough(extraItem);
+
     toast.success(`Added extra: ${name}`);
   }
 
-  const subtotal = activeCart.reduce((sum, i) => sum + i.price * i.quantity, 0);
-  const discountAmount = (subtotal * overallDiscount) / 100;
-  const total = subtotal - discountAmount;
-
   function handleCheckout() {
-    if (activeCart.length === 0) {
-      toast.error("Cart is empty");
+    if (officialCart.length === 0) {
+      toast.error("Official cart is empty");
       return;
     }
     setCheckoutOpen(true);
   }
 
-  function handleDispatch() {
-    toast.success("Order dispatched successfully!");
-    setActiveCart([]);
+  function handleDispatchOrder() {
+    // 1. Record order in Order Store
+    addOrder({
+      receiptNumber: `RCP-${Math.floor(1000 + Math.random() * 9000)}`,
+      clientName: clientName || "Walk-in Customer",
+      total: officialTotal,
+      originalTotal: officialSubtotal,
+      items: officialCart.map((i) => ({
+        name: i.name,
+        qty: i.quantity,
+        price: i.price,
+      })),
+    });
+
+    // 2. Deduct stock from Inventory Store
+    officialCart.forEach((i) => {
+      if (!i.id.startsWith("extra-")) {
+        deductStockById(i.id, i.quantity);
+      }
+    });
+
+    toast.success("Order dispatched & inventory updated!");
+    clearOfficial();
     setCheckoutOpen(false);
     setClientName("");
     setPhone("");
-    setOverallDiscount(0);
   }
 
   return (
-    <div className="flex flex-col lg:flex-row h-[calc(100vh-0px)] md:h-screen">
-      {/* Left Panel — Product Search */}
-      <div className="flex-1 flex flex-col p-4 lg:p-6 overflow-hidden">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="relative flex-1">
+    <div className="flex flex-col xl:flex-row h-[calc(100vh-0px)] md:h-screen overflow-hidden">
+      {/* Left Section — Inventory Search Catalog */}
+      <div className="w-full xl:w-[45%] flex flex-col p-4 lg:p-6 overflow-hidden border-b xl:border-b-0 xl:border-r">
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight">Point of Sale</h1>
+            <p className="text-xs text-muted-foreground">Select inventory items to bill</p>
+          </div>
+          <div className="relative flex-1 max-w-xs">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               ref={searchRef}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by name or scan barcode..."
-              className="pl-9"
+              placeholder="Search by name, company, exp..."
+              className="pl-9 text-sm"
             />
           </div>
         </div>
 
         <ScrollArea className="flex-1">
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
-            {filtered.map((product) => (
-              <motion.div
-                key={product.id}
-                whileTap={{ scale: 0.95 }}
-                whileHover={{ scale: 1.02 }}
-                transition={{ type: "spring", stiffness: 400, damping: 25 }}
-              >
-                <Card
-                  className="cursor-pointer hover:border-primary/40 transition-colors"
-                  onClick={() => addToCart(product)}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pr-2">
+            {filtered.map((product) => {
+              const expStatus = parseExpiryDate(product.expDate);
+              return (
+                <motion.div
+                  key={product.id}
+                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ scale: 1.02 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 25 }}
                 >
-                  <CardContent className="p-3">
-                    <p className="font-medium text-sm leading-tight">{product.name}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{product.company}</p>
-                    <div className="flex items-center justify-between mt-2">
-                      <span className="text-sm font-bold text-primary">
-                        Rs {product.salePrice}
-                      </span>
-                      <Badge
-                        variant="outline"
-                        className={`text-[10px] ${
-                          product.stock < 10
-                            ? "border-red-500/30 text-red-400"
-                            : "border-green-500/30 text-green-400"
-                        }`}
-                      >
-                        {product.stock} left
-                      </Badge>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
+                  <Card
+                    className={`cursor-pointer hover:border-primary/50 transition-colors ${
+                      expStatus.isExpiringSoon ? "border-amber-500/40 bg-amber-500/5" : ""
+                    }`}
+                    onClick={() => handleAddItem(product)}
+                  >
+                    <CardContent className="p-3">
+                      <div className="flex justify-between items-start">
+                        <p className="font-semibold text-sm leading-tight truncate">{product.name}</p>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">{product.company}</p>
+                      
+                      <div className="flex items-center gap-1 mt-1 text-[11px] text-muted-foreground font-mono">
+                        <Calendar className="w-3 h-3" />
+                        <span className={expStatus.isExpiringSoon ? "text-amber-400 font-bold" : ""}>
+                          Exp: {product.expDate}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between mt-2">
+                        <span className="text-sm font-bold text-primary">
+                          Rs {product.salePrice}
+                        </span>
+                        <Badge
+                          variant="outline"
+                          className={`text-[10px] ${
+                            product.stock < 10
+                              ? "border-red-500/30 text-red-400"
+                              : "border-green-500/30 text-green-400"
+                          }`}
+                        >
+                          {product.stock} left
+                        </Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              );
+            })}
           </div>
         </ScrollArea>
       </div>
 
-      {/* Right Panel — Cart */}
-      <div className="w-full lg:w-[380px] xl:w-[420px] border-t lg:border-t-0 lg:border-l flex flex-col bg-card/30">
-        <div className="p-4 border-b">
-          <div className="flex items-center justify-between">
+      {/* Right Section — DUAL CALCULATION PANELS (Official Bill + Working Calculation Pad) */}
+      <div className="flex-1 flex flex-col md:flex-row bg-card/30 overflow-hidden">
+        {/* Panel 1: Official Printable Bill */}
+        <div className="flex-1 flex flex-col border-b md:border-b-0 md:border-r">
+          <div className="p-3.5 border-b bg-card/60 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <ShoppingCart className="w-4 h-4 text-primary" />
-              <h2 className="font-semibold text-sm">
-                {isRoughPad ? "Rough Pad" : "Cart"}
-              </h2>
-              <Badge variant="secondary" className="text-xs">
-                {activeCart.length}
+              <Receipt className="w-4 h-4 text-primary" />
+              <h2 className="font-bold text-sm">Official Receipt</h2>
+              <Badge variant="default" className="text-xs">
+                {officialCart.length} items
               </Badge>
             </div>
+            {officialCart.length > 0 && (
+              <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground" onClick={clearOfficial}>
+                Clear
+              </Button>
+            )}
+          </div>
+
+          {/* Official Items List */}
+          <ScrollArea className="flex-1 p-3">
+            <AnimatePresence mode="popLayout">
+              {officialCart.length === 0 ? (
+                <div className="text-center text-muted-foreground py-12 text-sm">
+                  <ShoppingCart className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                  No items in official bill
+                </div>
+              ) : (
+                officialCart.map((item) => (
+                  <motion.div
+                    key={item.id}
+                    layout
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    className="flex items-center gap-2 py-2 border-b border-border/50"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold truncate">{item.name}</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        Rs {item.price} × {item.quantity}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-6 w-6 rounded-full"
+                        onClick={() => updateOfficialQty(item.id, -1)}
+                      >
+                        <Minus className="w-3 h-3" />
+                      </Button>
+                      <span className="w-6 text-center text-xs font-medium">{item.quantity}</span>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-6 w-6 rounded-full"
+                        onClick={() => updateOfficialQty(item.id, 1)}
+                      >
+                        <Plus className="w-3 h-3" />
+                      </Button>
+                    </div>
+                    <p className="text-xs font-bold w-16 text-right">
+                      Rs {(item.price * item.quantity).toLocaleString("en-PK")}
+                    </p>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-muted-foreground hover:text-red-400"
+                      onClick={() => removeOfficialItem(item.id)}
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </motion.div>
+                ))
+              )}
+            </AnimatePresence>
+          </ScrollArea>
+
+          {/* Official Totals & Actions */}
+          <div className="p-3 border-t bg-card/40 space-y-2.5">
             <div className="flex items-center gap-2">
-              <Label htmlFor="cart-toggle" className="text-xs text-muted-foreground">
-                Rough Pad
-              </Label>
-              <Switch
-                id="cart-toggle"
-                checked={isRoughPad}
-                onCheckedChange={(checked) => {
-                  setIsRoughPad(checked);
-                  toast.info(checked ? "Switched to Rough Pad" : "Switched to Main Cart");
-                }}
+              <Percent className="w-3.5 h-3.5 text-muted-foreground" />
+              <Input
+                type="number"
+                placeholder="Set Official Discount %"
+                className="h-7 text-xs"
+                value={officialDiscountPct || ""}
+                onChange={(e) => setOfficialDiscountPct(Number(e.target.value))}
+                min={0}
+                max={100}
               />
             </div>
+
+            <div className="space-y-1 text-xs">
+              <div className="flex justify-between text-muted-foreground">
+                <span>Subtotal</span>
+                <span>Rs {officialSubtotal.toLocaleString("en-PK")}</span>
+              </div>
+              {officialDiscountPct > 0 && (
+                <div className="flex justify-between text-red-400">
+                  <span>Discount ({officialDiscountPct}%)</span>
+                  <span>-Rs {officialDiscountAmt.toLocaleString("en-PK")}</span>
+                </div>
+              )}
+              <div className="flex justify-between font-bold text-base pt-1">
+                <span>Official Bill</span>
+                <span className="text-primary">Rs {officialTotal.toLocaleString("en-PK")}</span>
+              </div>
+            </div>
+
+            <Button className="w-full h-9" size="sm" onClick={handleCheckout}>
+              <Receipt className="w-4 h-4 mr-1.5" />
+              Checkout Official Bill
+            </Button>
           </div>
         </div>
 
-        <ScrollArea className="flex-1 p-4">
-          <AnimatePresence mode="popLayout">
-            {activeCart.length === 0 ? (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-center text-muted-foreground py-12 text-sm"
+        {/* Panel 2: Working / Calculation Pad (Beside Official Bill) */}
+        <div className="flex-1 flex flex-col bg-purple-500/5">
+          <div className="p-3.5 border-b bg-purple-500/10 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Calculator className="w-4 h-4 text-purple-400" />
+              <h2 className="font-bold text-sm text-purple-300">Calculation Pad</h2>
+              <Badge variant="outline" className="text-xs border-purple-500/30 text-purple-300">
+                Draft / Working
+              </Badge>
+            </div>
+            <div className="flex gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs text-purple-300 hover:bg-purple-500/20"
+                onClick={() => {
+                  syncRoughToOfficial();
+                  toast.success("Applied Calculation Pad to Official Bill!");
+                }}
               >
-                <ShoppingCart className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                No items in {isRoughPad ? "rough pad" : "cart"}
-              </motion.div>
-            ) : (
-              activeCart.map((item) => (
-                <motion.div
-                  key={item.id}
-                  layout
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="flex items-center gap-3 py-2.5 border-b border-border/50"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{item.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Rs {item.price} × {item.quantity}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-7 w-7 rounded-full"
-                      onClick={() => updateQty(item.id, -1)}
-                    >
-                      <Minus className="w-3 h-3" />
-                    </Button>
-                    <span className="w-8 text-center text-sm font-medium">
-                      {item.quantity}
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-7 w-7 rounded-full"
-                      onClick={() => updateQty(item.id, 1)}
-                    >
-                      <Plus className="w-3 h-3" />
-                    </Button>
-                  </div>
-                  <p className="text-sm font-semibold w-20 text-right">
-                    Rs {(item.price * item.quantity).toLocaleString("en-PK")}
-                  </p>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 text-muted-foreground hover:text-red-400"
-                    onClick={() => removeItem(item.id)}
+                Sync to Official
+              </Button>
+            </div>
+          </div>
+
+          {/* Working Calculation Items List */}
+          <ScrollArea className="flex-1 p-3">
+            <AnimatePresence mode="popLayout">
+              {roughCart.length === 0 ? (
+                <div className="text-center text-muted-foreground py-12 text-sm">
+                  <Calculator className="w-8 h-8 mx-auto mb-2 opacity-30 text-purple-400" />
+                  Calculation Pad Empty
+                </div>
+              ) : (
+                roughCart.map((item) => (
+                  <motion.div
+                    key={item.id}
+                    layout
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="flex items-center gap-2 py-2 border-b border-purple-500/10"
                   >
-                    <X className="w-3 h-3" />
-                  </Button>
-                </motion.div>
-              ))
-            )}
-          </AnimatePresence>
-        </ScrollArea>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold truncate">{item.name}</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        Rs {item.price} × {item.quantity}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-6 w-6 rounded-full"
+                        onClick={() => updateRoughQty(item.id, -1)}
+                      >
+                        <Minus className="w-3 h-3" />
+                      </Button>
+                      <span className="w-6 text-center text-xs font-medium">{item.quantity}</span>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-6 w-6 rounded-full"
+                        onClick={() => updateRoughQty(item.id, 1)}
+                      >
+                        <Plus className="w-3 h-3" />
+                      </Button>
+                    </div>
+                    <p className="text-xs font-bold w-16 text-right text-purple-300">
+                      Rs {(item.price * item.quantity).toLocaleString("en-PK")}
+                    </p>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-muted-foreground hover:text-red-400"
+                      onClick={() => removeRoughItem(item.id)}
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </motion.div>
+                ))
+              )}
+            </AnimatePresence>
+          </ScrollArea>
 
-        {/* Totals & Actions */}
-        <div className="p-4 border-t space-y-3">
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full text-xs"
-            onClick={addExtra}
-          >
-            <Plus className="w-3 h-3 mr-1" /> Add Extra
-          </Button>
-
-          <div className="flex items-center gap-2">
-            <Percent className="w-3.5 h-3.5 text-muted-foreground" />
-            <Input
-              type="number"
-              placeholder="Discount %"
-              className="h-8 text-sm"
-              value={overallDiscount || ""}
-              onChange={(e) => setOverallDiscount(Number(e.target.value))}
-              min={0}
-              max={100}
-            />
-          </div>
-
-          <Separator />
-
-          <div className="space-y-1 text-sm">
-            <div className="flex justify-between text-muted-foreground">
-              <span>Subtotal</span>
-              <span>Rs {subtotal.toLocaleString("en-PK")}</span>
-            </div>
-            {overallDiscount > 0 && (
-              <div className="flex justify-between text-red-400">
-                <span>Discount ({overallDiscount}%)</span>
-                <span>-Rs {discountAmount.toLocaleString("en-PK")}</span>
+          {/* Working Calculation Set Discount & Totals */}
+          <div className="p-3 border-t bg-purple-500/10 space-y-2.5">
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <Label className="text-[11px] text-muted-foreground">Set Discount %</Label>
+                <Input
+                  type="number"
+                  placeholder="%"
+                  className="h-7 text-xs"
+                  value={roughDiscountPct || ""}
+                  onChange={(e) => setRoughDiscountPct(Number(e.target.value))}
+                />
               </div>
-            )}
-            <div className="flex justify-between font-bold text-lg pt-1">
-              <span>Total</span>
-              <span className="text-primary">Rs {total.toLocaleString("en-PK")}</span>
+              <div className="space-y-1">
+                <Label className="text-[11px] text-muted-foreground">Set Flat Discount (Rs)</Label>
+                <Input
+                  type="number"
+                  placeholder="Rs"
+                  className="h-7 text-xs"
+                  value={roughDiscountFixed || ""}
+                  onChange={(e) => setRoughDiscountFixed(Number(e.target.value))}
+                />
+              </div>
             </div>
-          </div>
 
-          <Button className="w-full" size="lg" onClick={handleCheckout}>
-            <Receipt className="w-4 h-4 mr-2" />
-            Checkout
-          </Button>
+            <div className="space-y-1 text-xs">
+              <div className="flex justify-between text-muted-foreground">
+                <span>Subtotal</span>
+                <span>Rs {roughSubtotal.toLocaleString("en-PK")}</span>
+              </div>
+              {roughDiscountPct > 0 && (
+                <div className="flex justify-between text-purple-300">
+                  <span>Pct Discount ({roughDiscountPct}%)</span>
+                  <span>-Rs {roughPctDiscountAmt.toLocaleString("en-PK")}</span>
+                </div>
+              )}
+              {roughDiscountFixed > 0 && (
+                <div className="flex justify-between text-purple-300">
+                  <span>Flat Discount</span>
+                  <span>-Rs {roughDiscountFixed.toLocaleString("en-PK")}</span>
+                </div>
+              )}
+              <div className="flex justify-between font-bold text-base pt-1 border-t border-purple-500/20">
+                <span>Working Calculation Total</span>
+                <span className="text-purple-300">Rs {roughTotal.toLocaleString("en-PK")}</span>
+              </div>
+            </div>
+
+            <Button
+              variant="outline"
+              className="w-full h-9 text-xs border-purple-500/30 text-purple-300 hover:bg-purple-500/20"
+              onClick={() => handleAddExtra("rough")}
+            >
+              <Plus className="w-3.5 h-3.5 mr-1" /> Add Extra Charge to Calculation
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -377,7 +510,7 @@ export default function POSPage() {
       <Dialog open={checkoutOpen} onOpenChange={setCheckoutOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Checkout</DialogTitle>
+            <DialogTitle>Official Checkout & Print</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
@@ -418,39 +551,43 @@ export default function POSPage() {
             </div>
             <Separator />
             <div className="flex justify-between font-bold text-lg">
-              <span>Total</span>
-              <span className="text-primary">Rs {total.toLocaleString("en-PK")}</span>
+              <span>Total Payable</span>
+              <span className="text-primary">Rs {officialTotal.toLocaleString("en-PK")}</span>
             </div>
           </div>
           <DialogFooter className="flex-col sm:flex-row gap-2">
-            <Button variant="outline" onClick={() => {
-              toast.info("Preparing receipt for printing...");
-              setTimeout(() => window.print(), 100);
-            }}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                toast.info("Preparing receipt for printing...");
+                setTimeout(() => window.print(), 100);
+              }}
+            >
               <Receipt className="w-4 h-4 mr-2" /> Print Receipt
             </Button>
-            <Button onClick={handleDispatch}>
+            <Button onClick={handleDispatchOrder}>
+              <Check className="w-4 h-4 mr-1" />
               Dispatch Order
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Hidden Printable Receipt (Visible only on print) */}
+      {/* Hidden Printable Thermal Receipt */}
       <div className="hidden print:block receipt-printable bg-white text-black p-4 text-[12px] leading-tight font-mono w-[80mm] absolute top-0 left-0">
         <div className="text-center mb-4">
-          <h2 className="text-xl font-bold mb-1">MediStore</h2>
-          <p>Client: {clientName || "Walk-in"}</p>
+          <h2 className="text-xl font-bold mb-1">MediStore ERP</h2>
+          <p>Client: {clientName || "Walk-in Customer"}</p>
           <p>{phone ? `Phone: ${phone}` : ""}</p>
           <p>Date: {new Date().toLocaleString()}</p>
         </div>
         <div className="border-b border-black border-dashed mb-2 pb-1 flex justify-between font-bold">
-          <span className="w-1/2">Item</span>
+          <span className="w-1/2">Medicine</span>
           <span className="w-1/6 text-center">Qty</span>
           <span className="w-1/3 text-right">Total</span>
         </div>
         <div className="space-y-1 mb-2">
-          {activeCart.map((item) => (
+          {officialCart.map((item) => (
             <div key={item.id} className="flex justify-between">
               <span className="w-1/2 truncate pr-1">{item.name}</span>
               <span className="w-1/6 text-center">{item.quantity}</span>
@@ -461,22 +598,21 @@ export default function POSPage() {
         <div className="border-t border-black border-dashed pt-2 space-y-1">
           <div className="flex justify-between">
             <span>Subtotal:</span>
-            <span>Rs {subtotal.toLocaleString()}</span>
+            <span>Rs {officialSubtotal.toLocaleString()}</span>
           </div>
-          {overallDiscount > 0 && (
+          {officialDiscountPct > 0 && (
             <div className="flex justify-between">
-              <span>Discount ({overallDiscount}%):</span>
-              <span>-Rs {discountAmount.toLocaleString()}</span>
+              <span>Discount ({officialDiscountPct}%):</span>
+              <span>-Rs {officialDiscountAmt.toLocaleString()}</span>
             </div>
           )}
           <div className="flex justify-between font-bold text-sm mt-1">
-            <span>Total:</span>
-            <span>Rs {total.toLocaleString()}</span>
+            <span>Total Amount:</span>
+            <span>Rs {officialTotal.toLocaleString()}</span>
           </div>
         </div>
         <div className="text-center mt-6 text-[10px]">
           <p>Thank you for visiting MediStore!</p>
-          <p>Powered by MediStore ERP</p>
         </div>
       </div>
     </div>
