@@ -69,10 +69,32 @@ export const useInventoryStore = create<InventoryState>((set, get) => {
     initialized: false,
 
     fetchItems: async () => {
-      const { data, error } = await supabase.from('products').select('*');
-      if (data && !error) {
-        set({ items: data.map(mapToFrontend), initialized: true });
+      let allData: any[] = [];
+      let from = 0;
+      const step = 1000;
+      let hasMore = true;
+
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .range(from, from + step - 1);
+
+        if (error) {
+          console.error("Fetch error:", error);
+          break;
+        }
+
+        if (data && data.length > 0) {
+          allData = [...allData, ...data];
+          from += step;
+          if (data.length < step) hasMore = false;
+        } else {
+          hasMore = false;
+        }
       }
+
+      set({ items: allData.map(mapToFrontend), initialized: true });
     },
 
     subscribeToRealtime: () => {
