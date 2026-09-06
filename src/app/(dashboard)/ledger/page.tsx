@@ -34,38 +34,10 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { useLedgerStore, ClientBalance, Payment } from "@/store/useLedgerStore";
+import { useEffect } from "react";
 
-type ClientBalance = {
-  id: string;
-  name: string;
-  phone: string;
-  date: string;
-  totalBilled: number;
-  totalPaid: number;
-};
 
-type Payment = {
-  id: string;
-  clientName: string;
-  phone: string;
-  amount: number;
-  date: string;
-  notes: string;
-};
-
-const INITIAL_CLIENTS: ClientBalance[] = [
-  { id: "1", name: "Ali Medical Store", phone: "923001234567", date: "2026-09-01", totalBilled: 45000, totalPaid: 37000 },
-  { id: "2", name: "City Pharmacy", phone: "923219876543", date: "2026-09-02", totalBilled: 32000, totalPaid: 32000 },
-  { id: "3", name: "Hameed Medicos", phone: "923334567890", date: "2026-09-03", totalBilled: 28500, totalPaid: 20000 },
-  { id: "4", name: "New Life Pharmacy", phone: "923125554433", date: "2026-09-04", totalBilled: 18000, totalPaid: 10000 },
-  { id: "5", name: "Care Pharma", phone: "923456667788", date: "2026-09-05", totalBilled: 55000, totalPaid: 50000 },
-];
-
-const INITIAL_PAYMENTS: Payment[] = [
-  { id: "1", clientName: "Ali Medical Store", phone: "923001234567", amount: 5000, date: "2026-09-03", notes: "Partial payment" },
-  { id: "2", clientName: "Hameed Medicos", phone: "923334567890", amount: 10000, date: "2026-09-04", notes: "Cheque cleared" },
-  { id: "3", clientName: "Care Pharma", phone: "923456667788", amount: 25000, date: "2026-09-05", notes: "Bank transfer" },
-];
 
 const fadeIn = {
   initial: { opacity: 0, y: 10 },
@@ -74,8 +46,14 @@ const fadeIn = {
 };
 
 export default function LedgerPage() {
-  const [clients, setClients] = useState<ClientBalance[]>(INITIAL_CLIENTS);
-  const [payments, setPayments] = useState<Payment[]>(INITIAL_PAYMENTS);
+  const { clients, payments, initialized, fetchLedger, subscribeToRealtime, addClient, updateClient, addPayment } = useLedgerStore();
+
+  useEffect(() => {
+    if (!initialized) {
+      fetchLedger();
+    }
+    subscribeToRealtime();
+  }, [initialized, fetchLedger, subscribeToRealtime]);
 
   // Default customizable note for all clients
   const [customNote, setCustomNote] = useState("Kindly pay your dues.");
@@ -102,18 +80,16 @@ export default function LedgerPage() {
 
   function markPaid(client: ClientBalance) {
     const balance = client.totalBilled - client.totalPaid;
-    const newPayment: Payment = {
-      id: Date.now().toString(),
+    const newPayment = {
+      clientId: client.id,
       clientName: client.name,
       phone: client.phone,
       amount: balance,
       date: new Date().toISOString().split("T")[0],
       notes: "Full balance settled",
     };
-    setPayments((prev) => [newPayment, ...prev]);
-    setClients((prev) =>
-      prev.map((c) => (c.id === client.id ? { ...c, totalPaid: c.totalBilled } : c))
-    );
+    addPayment(newPayment);
+    updateClient(client.id, { totalPaid: client.totalBilled });
     toast.success(`Marked ${client.name} as fully paid (Rs ${balance.toLocaleString("en-PK")})`);
   }
 
@@ -142,8 +118,7 @@ export default function LedgerPage() {
       return;
     }
 
-    const newClient: ClientBalance = {
-      id: Date.now().toString(),
+    const newClient = {
       name: clientForm.name,
       phone: clientForm.phone || "923000000000",
       date: clientForm.date || new Date().toISOString().split("T")[0],
@@ -151,7 +126,7 @@ export default function LedgerPage() {
       totalPaid: Number(clientForm.totalPaid) || 0,
     };
 
-    setClients((prev) => [newClient, ...prev]);
+    addClient(newClient);
     setAddClientOpen(false);
     setClientForm({
       name: "",
@@ -169,8 +144,10 @@ export default function LedgerPage() {
       return;
     }
 
-    const newPayment: Payment = {
-      id: Date.now().toString(),
+    const existingClient = clients.find(c => c.name.toLowerCase() === paymentForm.clientName.toLowerCase());
+
+    const newPayment = {
+      clientId: existingClient?.id,
       clientName: paymentForm.clientName,
       phone: paymentForm.phone,
       amount: Number(paymentForm.amount),
@@ -178,14 +155,11 @@ export default function LedgerPage() {
       notes: paymentForm.notes || "Partial payment",
     };
 
-    setPayments((prev) => [newPayment, ...prev]);
-    setClients((prev) =>
-      prev.map((c) =>
-        c.name.toLowerCase() === paymentForm.clientName.toLowerCase()
-          ? { ...c, totalPaid: c.totalPaid + Number(paymentForm.amount) }
-          : c
-      )
-    );
+    addPayment(newPayment);
+    
+    if (existingClient) {
+      updateClient(existingClient.id, { totalPaid: existingClient.totalPaid + Number(paymentForm.amount) });
+    }
 
     setAddPaymentOpen(false);
     setPaymentForm({ clientName: "", phone: "", amount: 0, notes: "" });
