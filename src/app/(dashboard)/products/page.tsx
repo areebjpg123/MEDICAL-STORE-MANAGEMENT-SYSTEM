@@ -34,6 +34,13 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import { useInventoryStore, InventoryItem } from "@/store/useInventoryStore";
 import { parseExpiryDate } from "@/lib/expiry";
@@ -76,10 +83,11 @@ export default function ProductsPage() {
   const filtered = products
     .filter(
       (p) =>
-        p.name.toLowerCase().includes(search.toLowerCase()) ||
+        p.category !== "extras" &&
+        (p.name.toLowerCase().includes(search.toLowerCase()) ||
         p.company.toLowerCase().includes(search.toLowerCase()) ||
         p.formula.toLowerCase().includes(search.toLowerCase()) ||
-        p.expDate.includes(search)
+        p.expDate.includes(search))
     )
     .sort((a, b) => {
       const av = a[sortKey];
@@ -191,15 +199,30 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search inventory by name, company, formula, exp date..."
-          className="pl-9"
-        />
+      {/* Search and Extras */}
+      <div className="flex gap-4 items-center">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search inventory by name, company, formula, exp date..."
+            className="pl-9"
+          />
+        </div>
+        <Select onValueChange={(val) => {
+          const item = products.find(i => i.id === val);
+          if (item) openEdit(item);
+        }}>
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder="Extras Category" />
+          </SelectTrigger>
+          <SelectContent>
+            {products.filter(i => i.category === "extras").map(item => (
+              <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Table */}
