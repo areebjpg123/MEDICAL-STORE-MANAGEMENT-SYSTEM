@@ -130,7 +130,7 @@ export default function LedgerPage() {
     )} for invoice dated ${client.date}.\n\nNote: ${customNote}\n\nThank you,\nHassan Medical Store Management`;
 
     const encodedText = encodeURIComponent(messageText);
-    const waUrl = `https://wa.me/${cleanPhone}?text=${encodedText}`;
+    const waUrl = `https://web.whatsapp.com/send?phone=${cleanPhone}&text=${encodedText}`;
 
     window.open(waUrl, "whatsapp_web");
     toast.success(`Opening WhatsApp chat for ${client.name}...`);
