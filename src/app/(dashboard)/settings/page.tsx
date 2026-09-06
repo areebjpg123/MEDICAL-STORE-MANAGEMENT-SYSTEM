@@ -40,6 +40,7 @@ export default function SettingsPage() {
   const [receiptHeader, setReceiptHeader] = useState("Hassan Medical Store");
   const [receiptFooter, setReceiptFooter] = useState("Thank you for your business!");
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
+  const [adminPassword, setAdminPassword] = useState("");
 
   function handleSave() {
     toast.success("Settings saved successfully");
@@ -154,20 +155,44 @@ export default function SettingsPage() {
       </Button>
 
       {/* Clear Confirmation */}
-      <Dialog open={clearDialogOpen} onOpenChange={setClearDialogOpen}>
+      <Dialog open={clearDialogOpen} onOpenChange={(open) => {
+        setClearDialogOpen(open);
+        if (!open) setAdminPassword("");
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Clear All Data?</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            This will permanently delete all products, orders, and client data.
-            This action cannot be undone.
-          </p>
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-muted-foreground">
+              This will permanently delete all products, orders, and client data.
+              This action cannot be undone.
+            </p>
+            <div className="space-y-2">
+              <Label>Admin Password</Label>
+              <Input 
+                type="password" 
+                placeholder="Enter password to confirm" 
+                value={adminPassword}
+                onChange={(e) => setAdminPassword(e.target.value)}
+              />
+            </div>
+          </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setClearDialogOpen(false)}>
+            <Button variant="outline" onClick={() => {
+              setClearDialogOpen(false);
+              setAdminPassword("");
+            }}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleClearAll}>
+            <Button variant="destructive" onClick={() => {
+              if (adminPassword === "admin123") {
+                handleClearAll();
+                setAdminPassword("");
+              } else {
+                toast.error("Incorrect password!");
+              }
+            }}>
               Yes, Clear Everything
             </Button>
           </DialogFooter>
