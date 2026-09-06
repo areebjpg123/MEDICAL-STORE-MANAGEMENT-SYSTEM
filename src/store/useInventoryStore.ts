@@ -29,6 +29,7 @@ interface InventoryState {
   deleteItem: (id: string) => Promise<void>;
   restockItemByName: (name: string, quantity: number) => Promise<void>;
   deductStockById: (id: string, quantity: number) => Promise<void>;
+  wipeAll: () => Promise<void>;
   subscribeToRealtime: () => void;
 }
 
@@ -139,6 +140,16 @@ export const useInventoryStore = create<InventoryState>((set, get) => {
       const item = get().items.find(i => i.id === id);
       if (item) {
         get().updateItem(item.id, { stock: Math.max(0, item.stock - quantity) });
+      }
+    },
+
+    wipeAll: async () => {
+      if (!confirm("Are you sure you want to wipe ALL products? This cannot be undone!")) return;
+      set({ items: [] });
+      const { error } = await supabase.from('products').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      if (error) {
+        console.error("Wipe failed", error);
+        alert("Failed to wipe data online, but cleared locally.");
       }
     },
   };

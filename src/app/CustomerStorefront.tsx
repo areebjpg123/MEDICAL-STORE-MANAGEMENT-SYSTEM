@@ -18,6 +18,10 @@ export default function CustomerStorefront({ initialProducts }: { initialProduct
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 50;
+
   const supabase = createClient();
   const router = useRouter();
 
@@ -25,6 +29,9 @@ export default function CustomerStorefront({ initialProducts }: { initialProduct
     p.name.toLowerCase().includes(search.toLowerCase()) || 
     (p.formula_name && p.formula_name.toLowerCase().includes(search.toLowerCase()))
   );
+
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const paginatedProducts = filteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const addToCart = (product: any) => {
     const existing = cart.find(item => item.id === product.id);
@@ -102,7 +109,7 @@ export default function CustomerStorefront({ initialProducts }: { initialProduct
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredProducts.map(product => (
+          {paginatedProducts.map(product => (
             <div key={product.id} className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl p-4 flex flex-col shadow-sm hover:shadow-md transition-shadow">
               <div className="flex-1">
                 <h3 className="font-bold text-lg text-slate-900 dark:text-white">{product.name}</h3>
@@ -124,6 +131,27 @@ export default function CustomerStorefront({ initialProducts }: { initialProduct
             </div>
           )}
         </div>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-4 mt-6">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-4 py-2 border rounded-lg disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <span className="text-sm">Page {currentPage} of {totalPages}</span>
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 border rounded-lg disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Cart Section */}

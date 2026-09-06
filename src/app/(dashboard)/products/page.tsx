@@ -55,13 +55,17 @@ const emptyItem: Omit<InventoryItem, "id"> = {
 };
 
 export default function ProductsPage() {
-  const { items: products, addItem, updateItem, deleteItem } = useInventoryStore();
+  const { items: products, addItem, updateItem, deleteItem, wipeAll } = useInventoryStore();
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<InventoryItem | null>(null);
   const [form, setForm] = useState(emptyItem);
   const [sortKey, setSortKey] = useState<keyof InventoryItem>("name");
   const [sortAsc, setSortAsc] = useState(true);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 50;
 
   const criticalCount = products.filter((p) => p.stock < 10).length;
   const expiringSoonCount = products.filter(
@@ -85,6 +89,9 @@ export default function ProductsPage() {
       }
       return sortAsc ? Number(av) - Number(bv) : Number(bv) - Number(av);
     });
+
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const paginatedProducts = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   function toggleSort(key: keyof InventoryItem) {
     if (sortKey === key) setSortAsc(!sortAsc);
@@ -178,6 +185,9 @@ export default function ProductsPage() {
           <Button variant="outline" onClick={openAddExtra}>
             <Plus className="w-4 h-4 mr-1" /> Add Extras
           </Button>
+          <Button variant="destructive" onClick={wipeAll}>
+            <Trash2 className="w-4 h-4 mr-1" /> Wipe Data
+          </Button>
         </div>
       </div>
 
@@ -225,7 +235,7 @@ export default function ProductsPage() {
             </TableHeader>
             <TableBody>
               <AnimatePresence>
-                {filtered.map((product) => {
+                {paginatedProducts.map((product) => {
                   const expStatus = parseExpiryDate(product.expDate);
                   const isCriticalStock = product.stock < 10;
                   return (
@@ -295,6 +305,33 @@ export default function ProductsPage() {
             </TableBody>
           </Table>
         </ScrollArea>
+        {/* Pagination Controls */}
+        <div className="flex items-center justify-between px-4 py-4 border-t border-slate-200 dark:border-zinc-800">
+          <div className="text-sm text-slate-500">
+            Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filtered.length)} of {filtered.length} products
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(prev => prev - 1)}
+            >
+              Previous
+            </Button>
+            <span className="flex items-center px-3 text-sm font-medium">
+              Page {currentPage} of {totalPages || 1}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage === totalPages || totalPages === 0}
+              onClick={() => setCurrentPage(prev => prev + 1)}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
       </Card>
 
       {/* Add/Edit Dialog */}
