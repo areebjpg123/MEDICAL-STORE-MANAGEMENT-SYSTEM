@@ -86,9 +86,10 @@ export default function POSPage() {
 
   const filtered = inventoryItems.filter(
     (p) =>
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
+      p.category !== "extras" &&
+      (p.name.toLowerCase().includes(search.toLowerCase()) ||
       p.company.toLowerCase().includes(search.toLowerCase()) ||
-      p.expDate.includes(search)
+      p.expDate.includes(search))
   );
 
   function handleAddItem(product: InventoryItem) {
@@ -204,7 +205,7 @@ export default function POSPage() {
               </SelectTrigger>
               <SelectContent>
                 {inventoryItems.filter(i => i.category === "extras").map(item => (
-                  <SelectItem key={item.id} value={item.id}>{item.name} (Rs {item.salePrice})</SelectItem>
+                  <SelectItem key={item.id} value={item.id}>{item.name} (Exp: {item.expDate}, Rs {item.salePrice}, Qty: {item.stock})</SelectItem>
                 ))}
               </SelectContent>
             </Select>
