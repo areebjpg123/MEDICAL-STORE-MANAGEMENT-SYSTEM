@@ -1,18 +1,18 @@
-"use client";
+import { createClient } from '@/utils/supabase/server';
+import CustomerStorefront from './CustomerStorefront';
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-
-export default function Home() {
-  const router = useRouter();
-
-  useEffect(() => {
-    router.replace("/pos");
-  }, [router]);
+export default async function Home() {
+  const supabase = await createClient();
+  
+  // Fetch active products
+  const { data: products } = await supabase
+    .from('products')
+    .select('*')
+    .order('name');
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="animate-pulse text-muted-foreground text-sm">Loading...</div>
-    </div>
+    <main className="min-h-screen bg-slate-50 dark:bg-zinc-950">
+      <CustomerStorefront initialProducts={products || []} />
+    </main>
   );
 }
