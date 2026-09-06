@@ -1,6 +1,8 @@
 import { createClient } from '@/utils/supabase/server';
 import CustomerStorefront from './CustomerStorefront';
 
+export const dynamic = 'force-dynamic';
+
 export default async function Home() {
   const supabase = await createClient();
   
