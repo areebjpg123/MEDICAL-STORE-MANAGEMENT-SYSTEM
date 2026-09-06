@@ -25,6 +25,7 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/pos", label: "Point of Sale", icon: ShoppingCart },
   { href: "/products", label: "Inventory", icon: Package },
+  { href: "/revenue", label: "Revenue & Analytics", icon: LayoutDashboard },
   { href: "/ledger", label: "Ledger", icon: BookOpen },
   { href: "/history", label: "History", icon: History },
   { href: "/settings", label: "Settings", icon: Settings },
