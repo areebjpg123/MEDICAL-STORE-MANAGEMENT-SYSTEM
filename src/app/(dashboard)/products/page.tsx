@@ -209,15 +209,11 @@ export default function ProductsPage() {
             <TableHeader>
               <TableRow>
                 {[
-                  { key: "name", label: "Medicine Name" },
-                  { key: "company", label: "Company" },
-                  { key: "formula", label: "Formula" },
-                  { key: "expDate", label: "Exp Date (MM-YYYY)" },
-                  { key: "costPrice", label: "Cost Price" },
-                  { key: "salePrice", label: "Sale Price" },
+                  { key: "name", label: "Medicine Details" },
+                  { key: "expDate", label: "Expiry" },
+                  { key: "salePrice", label: "Price (Sale/Cost)" },
                   { key: "stock", label: "Stock" },
-                  { key: "section", label: "Section" },
-                  { key: "orderNumber", label: "Order No." },
+                  { key: "section", label: "Details" },
                 ].map((col) => (
                   <TableHead
                     key={col.key}
@@ -252,39 +248,46 @@ export default function ProductsPage() {
                           : ""
                       }`}
                     >
-                      <TableCell className="font-bold">{product.name}</TableCell>
-                      <TableCell className="text-muted-foreground">{product.company}</TableCell>
-                      <TableCell className="text-muted-foreground text-xs">{product.formula}</TableCell>
+                      <TableCell>
+                        <div className="font-bold text-slate-900 dark:text-white leading-tight">{product.name}</div>
+                        <div className="text-muted-foreground text-xs mt-1">
+                          {product.company} {product.formula && `• ${product.formula}`}
+                        </div>
+                      </TableCell>
                       <TableCell>
                         {expStatus.isExpiringSoon ? (
                           <Badge variant="destructive" className="bg-red-600 text-white font-bold gap-1 font-mono text-xs shadow-sm">
                             <Calendar className="w-3 h-3" />
-                            {product.expDate} ({expStatus.monthsRemaining}m left)
+                            {product.expDate} ({expStatus.monthsRemaining}m)
                           </Badge>
                         ) : (
                           <span className="font-mono text-sm">{product.expDate}</span>
                         )}
                       </TableCell>
-                      <TableCell>Rs {product.costPrice}</TableCell>
-                      <TableCell className="font-medium">Rs {product.salePrice}</TableCell>
                       <TableCell>
-                        <span className={isCriticalStock ? "text-red-400 font-bold" : ""}>
+                        <div className="font-medium text-slate-900 dark:text-white">Rs {product.salePrice}</div>
+                        <div className="text-muted-foreground text-xs mt-0.5">Cost: Rs {product.costPrice}</div>
+                      </TableCell>
+                      <TableCell>
+                        <span className={isCriticalStock ? "text-red-600 dark:text-red-400 font-bold" : "font-medium"}>
                           {product.stock}
                         </span>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="text-xs">{product.section}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs">{product.orderNumber || "-"}</span>
-                          {product.billImage && (
-                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => {
-                              const w = window.open("");
-                              if (w) w.document.write(`<img src="${product.billImage}" style="max-width:100%;height:auto;" />`);
-                            }}>
-                              <ImageIcon className="w-4 h-4 text-blue-500" />
-                            </Button>
+                        <div className="flex flex-col gap-1 items-start">
+                          <Badge variant="outline" className="text-[10px] uppercase">{product.section}</Badge>
+                          {product.orderNumber && (
+                            <span className="text-[10px] text-muted-foreground flex gap-1 items-center">
+                              Ord: {product.orderNumber}
+                              {product.billImage && (
+                                <Button variant="ghost" size="icon" className="h-4 w-4 ml-1" onClick={() => {
+                                  const w = window.open("");
+                                  if (w) w.document.write(`<img src="${product.billImage}" style="max-width:100%;height:auto;" />`);
+                                }}>
+                                  <ImageIcon className="w-3 h-3 text-blue-500" />
+                                </Button>
+                              )}
+                            </span>
                           )}
                         </div>
                       </TableCell>
