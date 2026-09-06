@@ -617,8 +617,8 @@ export default function POSPage() {
       {/* Hidden Printable Thermal Receipt */}
       <div className="hidden print:block receipt-printable bg-white text-black p-4 text-[12px] leading-tight font-mono w-[80mm] absolute top-0 left-0">
         <div className="text-center mb-4 flex flex-col items-center">
-          <img src="/receipt-logo.jpg" alt="MediStore Logo" className="w-16 h-16 mb-2 object-contain" />
-          <h2 className="text-xl font-bold mb-1">MediStore ERP</h2>
+          <img src="/receipt-logo.jpg" alt="Hassan Medical Store Logo" className="w-16 h-16 mb-2 object-contain" />
+          <h2 className="text-xl font-bold mb-1">Hassan Medical Store ERP</h2>
           <p>Client: {clientName || "Walk-in Customer"}</p>
           <p>{phone ? `Phone: ${phone}` : ""}</p>
           <p>Date: {new Date().toLocaleString()}</p>
@@ -654,7 +654,7 @@ export default function POSPage() {
           </div>
         </div>
         <div className="text-center mt-6 text-[10px]">
-          <p>Thank you for visiting MediStore!</p>
+          <p>Thank you for visiting Hassan Medical Store!</p>
         </div>
       </div>
     </div>

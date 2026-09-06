@@ -10,7 +10,7 @@ const fontSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "MediStore ERP System",
+  title: "Hassan Medical Store ERP System",
   description: "Offline-first POS and inventory management for medical stores",
   manifest: "/manifest.json",
 };

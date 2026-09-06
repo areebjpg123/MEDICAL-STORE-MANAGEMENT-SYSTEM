@@ -1,6 +1,6 @@
 {
-  "name": "MediStore ERP System",
-  "short_name": "MediStore",
+  "name": "Hassan Medical Store ERP System",
+  "short_name": "Hassan Medical Store",
   "description": "Offline-first POS and inventory management for medical stores",
   "start_url": "/",
   "display": "standalone",

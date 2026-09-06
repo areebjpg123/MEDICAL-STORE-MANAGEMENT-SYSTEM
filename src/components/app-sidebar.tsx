@@ -50,7 +50,7 @@ function NavContent({ pathname }: { pathname: string }) {
     <div className="flex flex-col h-full">
       {/* Brand */}
       <div className="flex items-center gap-3 px-4 py-4">
-        <img src="/icon.png" alt="MediStore Logo" className="w-12 h-12 object-contain drop-shadow-sm rounded-lg" />
+        <img src="/icon.png" alt="Hassan Medical Store Logo" className="w-12 h-12 object-contain drop-shadow-sm rounded-lg" />
         <span className="font-bold text-lg leading-tight">
           Hassan Medical<br />Store
         </span>
@@ -140,7 +140,7 @@ export function AppSidebar() {
           </SheetContent>
         </Sheet>
         <div className="flex items-center gap-2">
-          <img src="/icon.png" alt="MediStore Logo" className="w-8 h-8 object-contain drop-shadow-sm rounded-md" />
+          <img src="/icon.png" alt="Hassan Medical Store Logo" className="w-8 h-8 object-contain drop-shadow-sm rounded-md" />
           <span className="font-bold text-sm hidden sm:inline-block">Hassan Medical Store</span>
         </div>
       </div>

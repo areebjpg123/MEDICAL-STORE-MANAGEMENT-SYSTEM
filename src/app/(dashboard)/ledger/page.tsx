@@ -127,7 +127,7 @@ export default function LedgerPage() {
 
     const messageText = `Hello ${client.name},\n\nThis is a reminder regarding your pending ledger balance of Rs ${balance.toLocaleString(
       "en-PK"
-    )} for invoice dated ${client.date}.\n\nNote: ${customNote}\n\nThank you,\nMediStore Management`;
+    )} for invoice dated ${client.date}.\n\nNote: ${customNote}\n\nThank you,\nHassan Medical Store Management`;
 
     const encodedText = encodeURIComponent(messageText);
     const waUrl = `https://wa.me/${cleanPhone}?text=${encodedText}`;
