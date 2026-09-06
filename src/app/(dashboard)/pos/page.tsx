@@ -615,7 +615,8 @@ export default function POSPage() {
 
       {/* Hidden Printable Thermal Receipt */}
       <div className="hidden print:block receipt-printable bg-white text-black p-4 text-[12px] leading-tight font-mono w-[80mm] absolute top-0 left-0">
-        <div className="text-center mb-4">
+        <div className="text-center mb-4 flex flex-col items-center">
+          <img src="/receipt-logo.jpg" alt="MediStore Logo" className="w-16 h-16 mb-2 object-contain" />
           <h2 className="text-xl font-bold mb-1">MediStore ERP</h2>
           <p>Client: {clientName || "Walk-in Customer"}</p>
           <p>{phone ? `Phone: ${phone}` : ""}</p>

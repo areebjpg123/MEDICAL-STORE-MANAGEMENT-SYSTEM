@@ -347,7 +347,8 @@ export default function HistoryPage() {
       {/* Hidden Printable Thermal Receipt */}
       {printingOrder && (
         <div className="hidden print:block receipt-printable bg-white text-black p-4 text-[12px] leading-tight font-mono w-[80mm] absolute top-0 left-0">
-          <div className="text-center mb-4">
+          <div className="text-center mb-4 flex flex-col items-center">
+            <img src="/receipt-logo.jpg" alt="MediStore Logo" className="w-16 h-16 mb-2 object-contain" />
             <h2 className="text-xl font-bold mb-1">MediStore ERP</h2>
             <p>Client: {printingOrder.clientName}</p>
             <p>Receipt: {printingOrder.receiptNumber}</p>
