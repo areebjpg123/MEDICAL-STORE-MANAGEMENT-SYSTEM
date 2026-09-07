@@ -92,25 +92,28 @@ function NavContent({ pathname }: { pathname: string }) {
       {/* Online Status */}
       <div className="px-4 py-3 mt-auto">
         <Separator className="mb-3" />
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          {isOnline ? (
-            <>
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
-              </span>
-              <Wifi className="w-3 h-3" />
-              Online
-            </>
-          ) : (
-            <>
-              <span className="relative flex h-2 w-2">
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
-              </span>
-              <WifiOff className="w-3 h-3" />
-              Offline Mode
-            </>
-          )}
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <div className="flex items-center gap-2">
+            {isOnline ? (
+              <>
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
+                </span>
+                <Wifi className="w-3 h-3" />
+                Online
+              </>
+            ) : (
+              <>
+                <span className="relative flex h-2 w-2">
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
+                </span>
+                <WifiOff className="w-3 h-3" />
+                Offline Mode
+              </>
+            )}
+          </div>
+          <span className="font-mono text-[10px] font-medium tracking-widest opacity-50">v0.1.1</span>
         </div>
       </div>
     </div>
