@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS public.customers (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     phone TEXT UNIQUE NOT NULL,
     name TEXT NOT NULL,
+    address TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

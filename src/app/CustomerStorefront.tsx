@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { ShoppingCart, Search, Plus, Minus, X, Check, UserCircle, Phone, MessageCircle, LogOut, Package } from 'lucide-react';
-import { createClient } from '@/utils/supabase/client';
-import { useRouter } from 'next/navigation';
-import CustomerAuthModal from '@/components/CustomerAuthModal';
+import { useState, useEffect } from "react";
+import { ShoppingCart, Search, Plus, Minus, X, Check, UserCircle, Phone, MessageCircle, LogOut, Package } from "lucide-react";
+import { createClient } from "@/utils/supabase/client";
+import { useRouter } from "next/navigation";
+import CustomerAuthModal from "@/components/CustomerAuthModal";
 
 export default function CustomerStorefront({ initialProducts }: { initialProducts: any[] }) {
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   const [cart, setCart] = useState<any[]>([]);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -19,7 +19,6 @@ export default function CustomerStorefront({ initialProducts }: { initialProduct
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
   
   // Checkout form
-  const [address, setAddress] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
@@ -97,7 +96,7 @@ export default function CustomerStorefront({ initialProducts }: { initialProduct
   const totalAmount = cart.reduce((sum, item) => sum + (item.sale_price * item.quantity), 0);
 
   const handleCheckoutClick = () => {
-    if (!currentUser) {
+    if (!currentUser || !currentUser.address) {
       setIsAuthModalOpen(true);
     } else {
       setIsCheckoutOpen(true);
@@ -115,7 +114,7 @@ export default function CustomerStorefront({ initialProducts }: { initialProduct
       customer_id: currentUser.id,
       client_name: currentUser.name,
       customer_phone: currentUser.phone,
-      customer_address: address,
+      customer_address: currentUser.address,
       items: cart,
       total: totalAmount,
       status: 'PENDING'
@@ -132,7 +131,6 @@ export default function CustomerStorefront({ initialProducts }: { initialProduct
       setTimeout(() => {
         setIsCheckoutOpen(false);
         setSuccess(false);
-        setAddress('');
       }, 8000);
     }
   };
@@ -146,23 +144,23 @@ export default function CustomerStorefront({ initialProducts }: { initialProduct
           setCurrentUser(cust);
           localStorage.setItem('medistore_customer', JSON.stringify(cust));
           setIsAuthModalOpen(false);
-          setIsCheckoutOpen(true);
+          if (cart.length > 0) setIsCheckoutOpen(true);
         }} 
       />
 
       <div className="flex-1 w-full">
-        <header className="flex justify-between items-center mb-8 bg-white dark:bg-zinc-900 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800">
+        <header className="flex flex-wrap sm:flex-nowrap justify-between items-center gap-4 mb-8 bg-white dark:bg-zinc-900 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800">
           <div>
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white">MediStore</h1>
             <p className="text-sm text-slate-500">Fast & Reliable Medicines</p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0">
             {currentUser ? (
-               <div className="flex items-center gap-3">
-                 <button onClick={() => setView(view === 'store' ? 'past_orders' : 'store')} className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-blue-600 bg-slate-100 dark:bg-zinc-800 px-3 py-2 rounded-lg">
+               <div className="flex items-center gap-3 w-full sm:w-auto">
+                 <button onClick={() => setView(view === 'store' ? 'past_orders' : 'store')} className="shrink-0 flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-blue-600 bg-slate-100 dark:bg-zinc-800 px-3 py-2 rounded-lg">
                    {view === 'store' ? <><Package size={16}/> Past Orders</> : <><ShoppingCart size={16}/> Shop</>}
                  </button>
-                 <div className="hidden sm:flex flex-col text-right">
+                 <div className="hidden sm:flex flex-col text-right shrink-0">
                    <span className="text-sm font-bold text-slate-900 dark:text-white">{currentUser.name}</span>
                    <span className="text-xs text-slate-500">{currentUser.phone}</span>
                  </div>
@@ -170,12 +168,12 @@ export default function CustomerStorefront({ initialProducts }: { initialProduct
                    setCurrentUser(null);
                    localStorage.removeItem('medistore_customer');
                    setView('store');
-                 }} className="p-2 text-slate-400 hover:text-red-500 bg-slate-50 dark:bg-zinc-950 rounded-lg" title="Logout">
+                 }} className="shrink-0 p-2 text-slate-400 hover:text-red-500 bg-slate-50 dark:bg-zinc-950 rounded-lg" title="Logout">
                    <LogOut size={18} />
                  </button>
                </div>
             ) : (
-               <button onClick={() => setIsAuthModalOpen(true)} className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-800 dark:text-slate-200 px-4 py-2 rounded-xl font-medium transition-colors">
+               <button onClick={() => setIsAuthModalOpen(true)} className="w-full sm:w-auto justify-center flex items-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-800 dark:text-slate-200 px-4 py-2 rounded-xl font-medium transition-colors">
                  <UserCircle size={20} /> Login
                </button>
             )}
@@ -196,7 +194,7 @@ export default function CustomerStorefront({ initialProducts }: { initialProduct
                  {pastOrders.map(order => (
                    <div key={order.id} className="border border-slate-200 dark:border-zinc-800 rounded-xl p-4 flex flex-col sm:flex-row gap-4 justify-between">
                      <div>
-                       <div className="flex items-center gap-3 mb-2">
+                       <div className="flex flex-wrap items-center gap-3 mb-2">
                          <span className="font-bold text-lg">Order #{order.receipt_number || 'N/A'}</span>
                          <span className={`px-2 py-1 text-xs font-bold rounded-md ${order.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-700' : order.status === 'CANCELLED' ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700'}`}>
                            {order.status}
@@ -228,19 +226,19 @@ export default function CustomerStorefront({ initialProducts }: { initialProduct
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
               {paginatedProducts.map(product => (
-                <div key={product.id} className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+                <div key={product.id} className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl p-3 sm:p-4 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
                   <div>
-                    {product.section && <span className="inline-block px-2 py-1 bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-400 text-xs rounded-md mb-3">{product.section}</span>}
-                    <h3 className="font-bold text-lg text-slate-900 dark:text-white line-clamp-2 leading-tight">{product.name}</h3>
-                    {product.formula_name && <p className="text-xs text-slate-500 mt-1 line-clamp-1">{product.formula_name}</p>}
-                    <p className="text-xl font-bold text-blue-600 mt-3">Rs. {product.sale_price}</p>
+                    {product.section && <span className="inline-block px-2 py-1 bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs rounded-md mb-2 sm:mb-3">{product.section}</span>}
+                    <h3 className="font-bold text-sm sm:text-lg text-slate-900 dark:text-white line-clamp-2 leading-tight">{product.name}</h3>
+                    {product.formula_name && <p className="text-[10px] sm:text-xs text-slate-500 mt-1 line-clamp-1">{product.formula_name}</p>}
+                    <p className="text-base sm:text-xl font-bold text-blue-600 mt-2 sm:mt-3">Rs. {product.sale_price}</p>
                   </div>
                   <button 
                     onClick={() => addToCart(product)}
                     disabled={product.stock_quantity <= 0}
-                    className="mt-4 w-full bg-slate-100 hover:bg-slate-200 text-slate-800 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-200 py-2.5 rounded-xl font-medium disabled:opacity-50 transition-colors"
+                    className="mt-3 sm:mt-4 w-full bg-slate-100 hover:bg-slate-200 text-slate-800 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-200 py-2 sm:py-2.5 rounded-xl text-sm sm:text-base font-medium disabled:opacity-50 transition-colors"
                   >
                     {product.stock_quantity > 0 ? 'Add to Cart' : 'Out of Stock'}
                   </button>
@@ -254,19 +252,19 @@ export default function CustomerStorefront({ initialProducts }: { initialProduct
             </div>
 
             {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-4 mt-8 bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-slate-200 dark:border-zinc-800">
-                <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="px-4 py-2 border rounded-lg disabled:opacity-50 font-medium">Previous</button>
+              <div className="flex flex-wrap sm:flex-nowrap items-center justify-center gap-4 mt-8 bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-slate-200 dark:border-zinc-800">
+                <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="px-4 py-2 border rounded-lg disabled:opacity-50 font-medium w-full sm:w-auto">Previous</button>
                 <span className="text-sm font-medium text-slate-600 dark:text-slate-400">Page {currentPage} of {totalPages}</span>
-                <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="px-4 py-2 border rounded-lg disabled:opacity-50 font-medium">Next</button>
+                <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="px-4 py-2 border rounded-lg disabled:opacity-50 font-medium w-full sm:w-auto">Next</button>
               </div>
             )}
           </>
         )}
       </div>
 
-      {/* Cart Section */}
-      <div className={`w-full md:w-96 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-xl flex flex-col h-[calc(100vh-2rem)] sticky top-4 ${view === 'past_orders' ? 'hidden md:flex' : 'flex'}`}>
-        <div className="p-4 border-b border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-950 rounded-t-2xl flex items-center gap-3 shrink-0">
+      {/* Cart Section - Mobile Fixed Bottom & Desktop Sticky Side */}
+      <div className={`fixed bottom-0 left-0 right-0 z-50 md:sticky md:top-4 md:z-auto w-full md:w-96 bg-white dark:bg-zinc-900 border-t md:border border-slate-200 dark:border-zinc-800 md:rounded-2xl shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] md:shadow-xl flex flex-col ${view === 'past_orders' ? 'hidden md:flex' : 'flex'} ${cart.length === 0 ? 'hidden md:flex' : ''} md:h-[calc(100vh-2rem)]`}>
+        <div className="hidden md:flex p-4 border-b border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-950 rounded-t-2xl items-center gap-3 shrink-0">
           <ShoppingCart className="text-blue-600" />
           <h2 className="font-bold text-lg">Your Cart</h2>
           <span className="ml-auto bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 px-2.5 py-0.5 rounded-full text-sm font-bold">
@@ -274,7 +272,7 @@ export default function CustomerStorefront({ initialProducts }: { initialProduct
           </span>
         </div>
         
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        <div className="hidden md:block flex-1 overflow-y-auto p-4 space-y-3">
           {cart.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-slate-400 space-y-4">
               <div className="w-20 h-20 bg-slate-50 dark:bg-zinc-800 rounded-full flex items-center justify-center">
@@ -306,8 +304,13 @@ export default function CustomerStorefront({ initialProducts }: { initialProduct
           )}
         </div>
 
-        <div className="p-4 border-t border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-950 rounded-b-2xl space-y-4 shrink-0">
-          <div className="flex justify-between items-center font-bold text-xl">
+        {/* Mobile Cart Header & Actions */}
+        <div className="p-4 border-t border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-950 md:rounded-b-2xl shrink-0">
+          <div className="flex md:hidden justify-between items-center mb-3">
+             <span className="font-bold text-sm">{cart.reduce((s, i) => s + i.quantity, 0)} Items in Cart</span>
+             <button onClick={() => window.scrollTo(0,0)} className="text-blue-600 text-sm font-bold">View List</button>
+          </div>
+          <div className="flex justify-between items-center font-bold text-xl mb-4">
             <span>Total</span>
             <span className="text-blue-600">Rs. {totalAmount.toFixed(2)}</span>
           </div>
@@ -326,16 +329,16 @@ export default function CustomerStorefront({ initialProducts }: { initialProduct
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
           <div className="bg-white dark:bg-zinc-900 max-w-md w-full rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 relative">
             {success ? (
-              <div className="p-8 flex flex-col items-center justify-center text-center space-y-5">
+              <div className="p-6 sm:p-8 flex flex-col items-center justify-center text-center space-y-5">
                 <button onClick={() => {setIsCheckoutOpen(false); setSuccess(false); setView('past_orders');}} className="absolute top-4 right-4 text-slate-400 hover:text-slate-700">
                   <X size={24} />
                 </button>
-                <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-2">
+                <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-2 shrink-0">
                   <Check size={40} strokeWidth={3} />
                 </div>
                 <div>
-                  <h2 className="text-3xl font-bold mb-2 text-slate-900 dark:text-white">Order Placed!</h2>
-                  <p className="text-slate-500">Your order has been sent to the pharmacy. They will process it shortly.</p>
+                  <h2 className="text-2xl sm:text-3xl font-bold mb-2 text-slate-900 dark:text-white">Order Placed!</h2>
+                  <p className="text-slate-500 text-sm sm:text-base">Your order has been sent to the pharmacy. They will process it shortly.</p>
                 </div>
                 
                 <div className="w-full h-px bg-slate-200 dark:bg-zinc-800 my-4" />
@@ -353,35 +356,35 @@ export default function CustomerStorefront({ initialProducts }: { initialProduct
             ) : (
               <form onSubmit={handleCheckout} className="p-6 space-y-5">
                 <div className="flex justify-between items-center mb-2">
-                  <h2 className="text-2xl font-bold">Checkout</h2>
+                  <h2 className="text-2xl font-bold">Confirm Order</h2>
                   <button type="button" onClick={() => setIsCheckoutOpen(false)} className="text-slate-400 hover:text-slate-700">
                     <X size={24} />
                   </button>
                 </div>
                 
-                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl flex items-center gap-4">
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl flex gap-4">
                   <div className="w-10 h-10 bg-blue-100 dark:bg-blue-800 text-blue-600 dark:text-blue-200 rounded-full flex items-center justify-center shrink-0">
                     <UserCircle size={24} />
                   </div>
                   <div>
                     <p className="font-bold text-slate-900 dark:text-white">{currentUser?.name}</p>
-                    <p className="text-sm text-slate-600 dark:text-slate-400">{currentUser?.phone}</p>
-                  </div>
-                </div>
-                
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-sm font-medium text-slate-700 dark:text-zinc-300">Complete Delivery Address</label>
-                    <textarea required rows={3} placeholder="House 123, Street 4, City..." value={address} onChange={e=>setAddress(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-300 dark:border-zinc-700 px-4 py-3 bg-white dark:bg-zinc-950 focus:ring-2 focus:ring-blue-600 outline-none resize-none transition-all" />
+                    <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">{currentUser?.phone}</p>
+                    <p className="text-xs text-slate-500 bg-white dark:bg-zinc-950 p-2 rounded-lg border border-blue-100 dark:border-blue-800/50">
+                      <span className="font-semibold block mb-1">Delivering to:</span>
+                      {currentUser?.address}
+                    </p>
+                    <button type="button" onClick={() => { setIsCheckoutOpen(false); setIsAuthModalOpen(true); }} className="text-xs text-blue-600 font-semibold mt-2 hover:underline">
+                      Edit Profile / Address
+                    </button>
                   </div>
                 </div>
 
-                <div className="pt-6 border-t border-slate-100 dark:border-zinc-800">
+                <div className="pt-4 border-t border-slate-100 dark:border-zinc-800">
                   <div className="flex justify-between items-center mb-6">
                     <span className="font-semibold text-slate-500">Total Amount:</span>
                     <span className="font-bold text-2xl text-blue-600">Rs. {totalAmount.toFixed(2)}</span>
                   </div>
-                  <button type="submit" disabled={isSubmitting || !address.trim()} className="w-full bg-emerald-600 text-white font-bold py-4 rounded-xl hover:bg-emerald-700 transition-colors disabled:opacity-50 shadow-lg shadow-emerald-600/20">
+                  <button type="submit" disabled={isSubmitting} className="w-full bg-emerald-600 text-white font-bold py-4 rounded-xl hover:bg-emerald-700 transition-colors disabled:opacity-50 shadow-lg shadow-emerald-600/20">
                     {isSubmitting ? 'Placing Order...' : 'Confirm Order'}
                   </button>
                 </div>
