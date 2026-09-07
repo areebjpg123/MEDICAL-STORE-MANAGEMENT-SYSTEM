@@ -24,4 +24,5 @@ ALTER TABLE public.orders ADD CONSTRAINT orders_status_check CHECK (status IN ('
 
 -- Set up RLS for Customers
 ALTER TABLE public.customers ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Enable read/write for anonymous users on customers" ON public.customers;
 CREATE POLICY "Enable read/write for anonymous users on customers" ON public.customers FOR ALL USING (true) WITH CHECK (true);
