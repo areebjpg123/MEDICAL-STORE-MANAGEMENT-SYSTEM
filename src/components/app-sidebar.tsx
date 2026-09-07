@@ -16,23 +16,16 @@ import {
   X,
   Wifi,
   WifiOff,
+  BellRing
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
-
-const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/pos", label: "Point of Sale", icon: ShoppingCart },
-  { href: "/products", label: "Inventory", icon: Package },
-  { href: "/revenue", label: "Revenue & Analytics", icon: LayoutDashboard },
-  { href: "/ledger", label: "Ledger", icon: BookOpen },
-  { href: "/history", label: "History", icon: History },
-  { href: "/settings", label: "Settings", icon: Settings },
-];
+import { createClient } from "@/utils/supabase/client";
 
 function NavContent({ pathname }: { pathname: string }) {
   const [isOnline, setIsOnline] = useState(true);
+  const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
 
   useEffect(() => {
     setIsOnline(navigator.onLine);
@@ -46,9 +39,34 @@ function NavContent({ pathname }: { pathname: string }) {
     };
   }, []);
 
+  useEffect(() => {
+    const supabase = createClient();
+    const fetchPending = async () => {
+      const { count } = await supabase.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'PENDING');
+      setPendingOrdersCount(count || 0);
+    };
+    fetchPending();
+
+    const channel = supabase.channel('sidebar_orders')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, fetchPending)
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); }
+  }, []);
+
+  const navItems = [
+    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/pos", label: "Point of Sale", icon: ShoppingCart },
+    { href: "/orders", label: "Online Orders", icon: BellRing, badge: pendingOrdersCount },
+    { href: "/products", label: "Inventory", icon: Package },
+    { href: "/revenue", label: "Revenue & Analytics", icon: LayoutDashboard },
+    { href: "/ledger", label: "Ledger", icon: BookOpen },
+    { href: "/history", label: "History", icon: History },
+    { href: "/settings", label: "Settings", icon: Settings },
+  ];
+
   return (
     <div className="flex flex-col h-full">
-      {/* Brand */}
       <div className="flex items-center gap-3 px-4 py-4">
         <img src="/icon.png" alt="Hassan Medical Store Logo" className="w-12 h-12 object-contain drop-shadow-sm rounded-lg" />
         <span className="font-bold text-lg leading-tight">
@@ -58,7 +76,6 @@ function NavContent({ pathname }: { pathname: string }) {
 
       <Separator className="mb-2" />
 
-      {/* Navigation */}
       <nav className="flex-1 px-3 space-y-1">
         {navItems.map((item) => {
           const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
@@ -66,7 +83,7 @@ function NavContent({ pathname }: { pathname: string }) {
           return (
             <Link key={item.href} href={item.href}>
               <motion.div
-                className={`relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                className={`relative flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                   isActive
                     ? "bg-primary/10 text-primary"
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
@@ -74,8 +91,13 @@ function NavContent({ pathname }: { pathname: string }) {
                 whileHover={{ x: 2 }}
                 whileTap={{ scale: 0.98 }}
               >
-                <Icon className="w-4 h-4 shrink-0" />
-                {item.label}
+                <div className="flex items-center gap-3">
+                  <Icon className="w-4 h-4 shrink-0" />
+                  {item.label}
+                </div>
+                {item.badge && item.badge > 0 ? (
+                  <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse">{item.badge}</span>
+                ) : null}
                 {isActive && (
                   <motion.div
                     layoutId="activeNav"
@@ -89,7 +111,6 @@ function NavContent({ pathname }: { pathname: string }) {
         })}
       </nav>
 
-      {/* Online Status */}
       <div className="px-4 py-3 mt-auto">
         <Separator className="mb-3" />
         <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -113,7 +134,7 @@ function NavContent({ pathname }: { pathname: string }) {
               </>
             )}
           </div>
-          <span className="font-mono text-[10px] font-medium tracking-widest opacity-50">v0.1.1</span>
+          <span className="font-mono text-[10px] font-medium tracking-widest opacity-50">v0.1.2</span>
         </div>
       </div>
     </div>
@@ -125,17 +146,13 @@ export function AppSidebar() {
 
   return (
     <>
-      {/* Desktop Sidebar */}
       <aside className="hidden md:flex flex-col w-[260px] min-h-screen border-r bg-card/50">
         <NavContent pathname={pathname} />
       </aside>
 
-      {/* Mobile Sheet */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-50 flex items-center h-14 px-4 border-b bg-card/80 backdrop-blur-md">
         <Sheet>
-          <SheetTrigger
-            render={<Button variant="ghost" size="icon" className="mr-3" />}
-          >
+          <SheetTrigger render={<Button variant="ghost" size="icon" className="mr-3" />}>
             <Menu className="w-5 h-5" />
           </SheetTrigger>
           <SheetContent side="left" className="w-[260px] p-0">
