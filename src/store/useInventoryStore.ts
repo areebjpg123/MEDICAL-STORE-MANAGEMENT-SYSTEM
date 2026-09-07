@@ -44,6 +44,7 @@ const mapToFrontend = (dbProduct: any): InventoryItem => ({
   stock: dbProduct.stock_quantity || 0,
   boxQty: dbProduct.box_quantity || 0,
   section: dbProduct.section || "OTC",
+  category: dbProduct.category || "medicine",
 });
 
 const mapToBackend = (item: Partial<InventoryItem>) => {
@@ -57,6 +58,7 @@ const mapToBackend = (item: Partial<InventoryItem>) => {
   if (item.stock !== undefined) db.stock_quantity = item.stock;
   if (item.boxQty !== undefined) db.box_quantity = item.boxQty;
   if (item.section !== undefined) db.section = item.section;
+  if (item.category !== undefined) db.category = item.category;
   return db;
 };
 

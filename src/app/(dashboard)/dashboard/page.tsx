@@ -141,14 +141,14 @@ export default function DashboardPage() {
     ? selectedOrder.items.reduce((sum, i) => sum + (returnMap[i.name] || 0) * i.price, 0)
     : 0;
 
-  function confirmReplacementSubmit() {
+  async function confirmReplacementSubmit() {
     if (!selectedOrder) return;
     if (calculatedRefundTotal === 0) {
       toast.error("Please select at least 1 item to return.");
       return;
     }
 
-    const { refundTotal, itemsRestockedCount } = processReplacement(selectedOrder.id, returnMap);
+    const { refundTotal, itemsRestockedCount } = await processReplacement(selectedOrder.id, returnMap);
 
     toast.success(
       `Replacement complete! ${itemsRestockedCount} items restocked to inventory. Rs ${refundTotal.toLocaleString(

@@ -1,5 +1,7 @@
 import { create } from "zustand";
 import { useInventoryStore } from "./useInventoryStore";
+import { createClient } from "@/utils/supabase/client";
+import { queueOperation } from "@/lib/sync";
 
 export type OrderItem = {
   name: string;
@@ -22,163 +24,201 @@ export type Order = {
   items: OrderItem[];
 };
 
-export const INITIAL_ORDERS: Order[] = [
-  {
-    id: "1",
-    receiptNumber: "RCP-001",
-    clientName: "Walk-in",
-    date: "2026-09-05 14:30",
-    total: 1250,
-    originalTotal: 1250,
-    costTotal: 840,
-    deliveryMethod: "shop",
-    status: "DISPATCHED",
-    items: [
-      { name: "Panadol 500mg", qty: 2, price: 120, costPrice: 80 },
-      { name: "Brufen 400mg", qty: 1, price: 180, costPrice: 120 },
-      { name: "Disprin", qty: 3, price: 45, costPrice: 25 },
-    ],
-  },
-  {
-    id: "2",
-    receiptNumber: "RCP-002",
-    clientName: "Ali Medical",
-    date: "2026-09-05 13:15",
-    total: 8500,
-    originalTotal: 8500,
-    status: "DISPATCHED",
-    items: [
-      { name: "Augmentin 625mg", qty: 5, price: 850 },
-      { name: "Amoxil 250mg", qty: 10, price: 210 },
-      { name: "Risek 20mg", qty: 3, price: 380 },
-    ],
-  },
-  {
-    id: "3",
-    receiptNumber: "RCP-003",
-    clientName: "City Pharmacy",
-    date: "2026-09-05 11:00",
-    total: 3200,
-    originalTotal: 3200,
-    status: "PENDING",
-    items: [
-      { name: "Ponstan 500mg", qty: 5, price: 260 },
-      { name: "Flagyl 400mg", qty: 10, price: 95 },
-    ],
-  },
-  {
-    id: "4",
-    receiptNumber: "RCP-004",
-    clientName: "Walk-in",
-    date: "2026-09-05 10:30",
-    total: 450,
-    originalTotal: 450,
-    status: "DISPATCHED",
-    items: [
-      { name: "Calpol Syrup", qty: 1, price: 150 },
-      { name: "Rigix 10mg", qty: 2, price: 125 },
-    ],
-  },
-  {
-    id: "5",
-    receiptNumber: "RCP-005",
-    clientName: "Hameed Medicos",
-    date: "2026-09-04 16:00",
-    total: 6100,
-    originalTotal: 6100,
-    status: "DISPATCHED",
-    items: [
-      { name: "Ventolin Inhaler", qty: 2, price: 650 },
-      { name: "Nexium 40mg", qty: 4, price: 580 },
-      { name: "Arinac Forte", qty: 8, price: 195 },
-    ],
-  },
-  {
-    id: "6",
-    receiptNumber: "RCP-006",
-    clientName: "Walk-in",
-    date: "2026-09-04 09:45",
-    total: 520,
-    originalTotal: 520,
-    status: "CANCELLED",
-    items: [{ name: "Lipitor 20mg", qty: 1, price: 520 }],
-  },
-];
-
 interface OrderState {
   orders: Order[];
   totalRevenue: number;
-  addOrder: (newOrder: Omit<Order, "id" | "date" | "status">) => void;
-  processReplacement: (orderId: string, returns: { [itemName: string]: number }) => { refundTotal: number; itemsRestockedCount: number };
+  initialized: boolean;
+  fetchOrders: () => Promise<void>;
+  subscribeToRealtime: () => void;
+  addOrder: (newOrder: Omit<Order, "id" | "date" | "status" | "costTotal">) => Promise<void>;
+  processReplacement: (orderId: string, returns: { [itemName: string]: number }) => Promise<{ refundTotal: number; itemsRestockedCount: number }>;
+  wipeAll: () => Promise<void>;
 }
 
-export const useOrderStore = create<OrderState>((set, get) => ({
-  orders: INITIAL_ORDERS,
-  totalRevenue: 24580,
+const mapToFrontend = (dbOrder: any): Order => ({
+  id: dbOrder.id,
+  receiptNumber: dbOrder.receipt_number || "",
+  clientName: dbOrder.client_name || "",
+  date: dbOrder.date || "",
+  total: dbOrder.total || 0,
+  originalTotal: dbOrder.original_total || 0,
+  costTotal: dbOrder.cost_total || 0,
+  deliveryMethod: dbOrder.delivery_method || "shop",
+  status: dbOrder.status || "PENDING",
+  items: dbOrder.items || [],
+});
 
-  addOrder: (newOrderData) => {
-    const newOrder: Order = {
-      ...newOrderData,
-      id: Date.now().toString(),
-      date: new Date().toLocaleString("en-US", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-      }),
-      status: "DISPATCHED",
-      deliveryMethod: newOrderData.deliveryMethod || "shop",
-      costTotal: newOrderData.items.reduce((sum, item) => sum + (item.costPrice || item.price * 0.7) * item.qty, 0),
-    };
-    set((state) => ({
-      orders: [newOrder, ...state.orders],
-      totalRevenue: state.totalRevenue + newOrder.total,
-    }));
-  },
+const mapToBackend = (order: Partial<Order>) => {
+  const db: any = {};
+  if (order.id !== undefined) db.id = order.id;
+  if (order.receiptNumber !== undefined) db.receipt_number = order.receiptNumber;
+  if (order.clientName !== undefined) db.client_name = order.clientName;
+  if (order.date !== undefined) db.date = order.date;
+  if (order.total !== undefined) db.total = order.total;
+  if (order.originalTotal !== undefined) db.original_total = order.originalTotal;
+  if (order.costTotal !== undefined) db.cost_total = order.costTotal;
+  if (order.deliveryMethod !== undefined) db.delivery_method = order.deliveryMethod;
+  if (order.status !== undefined) db.status = order.status;
+  if (order.items !== undefined) db.items = order.items;
+  return db;
+};
 
-  processReplacement: (orderId, returns) => {
-    const { orders, totalRevenue } = get();
-    const targetOrder = orders.find((o) => o.id === orderId);
-    if (!targetOrder) return { refundTotal: 0, itemsRestockedCount: 0 };
+export const useOrderStore = create<OrderState>((set, get) => {
+  const supabase = createClient();
+  let realtimeChannel: any = null;
 
-    let refundTotal = 0;
-    let itemsRestockedCount = 0;
+  return {
+    orders: [],
+    totalRevenue: 0,
+    initialized: false,
 
-    const restockFn = useInventoryStore.getState().restockItemByName;
+    fetchOrders: async () => {
+      let allData: any[] = [];
+      let from = 0;
+      const step = 1000;
+      let hasMore = true;
 
-    const updatedItems = targetOrder.items.map((item) => {
-      const returnQty = Math.min(item.qty, returns[item.name] || 0);
-      if (returnQty > 0) {
-        refundTotal += returnQty * item.price;
-        itemsRestockedCount += returnQty;
-        // Restock inventory immediately!
-        restockFn(item.name, returnQty);
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from('orders')
+          .select('*')
+          .range(from, from + step - 1)
+          .order('date', { ascending: false });
+
+        if (error) {
+          console.error("Fetch error:", error);
+          break;
+        }
+
+        if (data && data.length > 0) {
+          allData = [...allData, ...data];
+          from += step;
+          if (data.length < step) hasMore = false;
+        } else {
+          hasMore = false;
+        }
       }
-      return {
-        ...item,
-        qty: item.qty - returnQty,
-        returnedQty: (item.returnedQty || 0) + returnQty,
+
+      const orders = allData.map(mapToFrontend);
+      const totalRevenue = orders.reduce((sum, o) => sum + o.total, 0);
+
+      set({ orders, totalRevenue, initialized: true });
+    },
+
+    subscribeToRealtime: () => {
+      if (realtimeChannel) return;
+      realtimeChannel = supabase.channel('orders-channel')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, (payload) => {
+          if (payload.eventType === 'INSERT') {
+            const newOrder = mapToFrontend(payload.new);
+            set((state) => {
+              if (state.orders.find(o => o.id === newOrder.id)) return state; // Deduplicate optimistic updates
+              return { 
+                orders: [newOrder, ...state.orders],
+                totalRevenue: state.totalRevenue + newOrder.total
+              };
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            const updatedOrder = mapToFrontend(payload.new);
+            set((state) => {
+              const oldOrder = state.orders.find(o => o.id === updatedOrder.id);
+              const diff = oldOrder ? updatedOrder.total - oldOrder.total : updatedOrder.total;
+              return {
+                orders: state.orders.map(o => o.id === updatedOrder.id ? updatedOrder : o),
+                totalRevenue: state.totalRevenue + diff
+              };
+            });
+          } else if (payload.eventType === 'DELETE') {
+            set((state) => {
+              const oldOrder = state.orders.find(o => o.id === payload.old.id);
+              return {
+                orders: state.orders.filter(o => o.id !== payload.old.id),
+                totalRevenue: state.totalRevenue - (oldOrder ? oldOrder.total : 0)
+              };
+            });
+          }
+        })
+        .subscribe();
+    },
+
+    addOrder: async (newOrderData) => {
+      const newOrder: Order = {
+        ...newOrderData,
+        id: Date.now().toString(),
+        date: new Date().toISOString(),
+        status: "DISPATCHED",
+        deliveryMethod: newOrderData.deliveryMethod || "shop",
+        costTotal: newOrderData.items.reduce((sum, item) => sum + (item.costPrice || item.price * 0.7) * item.qty, 0),
       };
-    });
 
-    const newTotal = Math.max(0, targetOrder.total - refundTotal);
+      set((state) => ({
+        orders: [newOrder, ...state.orders],
+        totalRevenue: state.totalRevenue + newOrder.total,
+      }));
 
-    set((state) => ({
-      orders: state.orders.map((o) =>
-        o.id === orderId
-          ? {
-              ...o,
-              total: newTotal,
-              items: updatedItems,
-              status: "REPLACED",
-            }
-          : o
-      ),
-      totalRevenue: Math.max(0, state.totalRevenue - refundTotal),
-    }));
+      const dbItem = mapToBackend(newOrder);
+      const { error } = await supabase.from('orders').insert(dbItem);
+      
+      if (error) {
+        queueOperation({ type: "INSERT", table: "orders", data: dbItem });
+      }
+    },
 
-    return { refundTotal, itemsRestockedCount };
-  },
-}));
+    processReplacement: async (orderId, returns) => {
+      const { orders } = get();
+      const targetOrder = orders.find((o) => o.id === orderId);
+      if (!targetOrder) return { refundTotal: 0, itemsRestockedCount: 0 };
+
+      let refundTotal = 0;
+      let itemsRestockedCount = 0;
+
+      const restockFn = useInventoryStore.getState().restockItemByName;
+
+      const updatedItems = targetOrder.items.map((item) => {
+        const returnQty = Math.min(item.qty, returns[item.name] || 0);
+        if (returnQty > 0) {
+          refundTotal += returnQty * item.price;
+          itemsRestockedCount += returnQty;
+          // Restock inventory immediately!
+          restockFn(item.name, returnQty);
+        }
+        return {
+          ...item,
+          qty: item.qty - returnQty,
+          returnedQty: (item.returnedQty || 0) + returnQty,
+        };
+      });
+
+      const newTotal = Math.max(0, targetOrder.total - refundTotal);
+      
+      const updatedOrder = {
+        ...targetOrder,
+        total: newTotal,
+        items: updatedItems,
+        status: "REPLACED" as const,
+      };
+
+      set((state) => ({
+        orders: state.orders.map((o) => o.id === orderId ? updatedOrder : o),
+        totalRevenue: Math.max(0, state.totalRevenue - refundTotal),
+      }));
+
+      const dbItem = mapToBackend(updatedOrder);
+      const { error } = await supabase.from('orders').update(dbItem).eq('id', orderId);
+      
+      if (error) {
+        queueOperation({ type: "UPDATE", table: "orders", data: dbItem });
+      }
+
+      return { refundTotal, itemsRestockedCount };
+    },
+
+    wipeAll: async () => {
+      set({ orders: [], totalRevenue: 0 });
+      const { error } = await supabase.from('orders').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      if (error) {
+        console.error("Orders Wipe failed", error);
+      }
+    },
+  };
+});

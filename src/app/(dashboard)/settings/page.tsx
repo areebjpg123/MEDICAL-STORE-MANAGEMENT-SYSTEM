@@ -26,6 +26,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { useInventoryStore } from "@/store/useInventoryStore";
+import { useOrderStore } from "@/store/useOrderStore";
 
 const fadeIn = {
   initial: { opacity: 0, y: 12 },
@@ -55,8 +57,14 @@ export default function SettingsPage() {
     toast.info("Import dialog opening...");
   }
 
-  function handleClearAll() {
+  const wipeInventory = useInventoryStore((state) => state.wipeAll);
+  const wipeOrders = useOrderStore((state) => state.wipeAll);
+
+  async function handleClearAll() {
     setClearDialogOpen(false);
+    toast.info("Wiping all data...");
+    await wipeInventory();
+    await wipeOrders();
     toast.success("All data has been cleared");
   }
 
