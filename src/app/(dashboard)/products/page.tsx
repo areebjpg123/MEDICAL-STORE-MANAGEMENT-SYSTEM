@@ -62,7 +62,7 @@ const emptyItem: Omit<InventoryItem, "id"> = {
 };
 
 export default function ProductsPage() {
-  const { items: products, addItem, updateItem, deleteItem, wipeAll } = useInventoryStore();
+  const { items: products, addItem, updateItem, deleteItem } = useInventoryStore();
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<InventoryItem | null>(null);
@@ -193,9 +193,7 @@ export default function ProductsPage() {
           <Button variant="outline" onClick={openAddExtra}>
             <Plus className="w-4 h-4 mr-1" /> Add Extras
           </Button>
-          <Button variant="destructive" onClick={wipeAll}>
-            <Trash2 className="w-4 h-4 mr-1" /> Wipe Data
-          </Button>
+
         </div>
       </div>
 
