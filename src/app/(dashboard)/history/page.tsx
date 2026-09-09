@@ -61,8 +61,8 @@ export default function HistoryPage() {
 
   const filtered = orders.filter((o) => {
     const matchSearch =
-      o.receiptNumber.toLowerCase().includes(search.toLowerCase()) ||
-      o.clientName.toLowerCase().includes(search.toLowerCase());
+      String(o.receiptNumber || "").toLowerCase().includes(search.toLowerCase()) ||
+      String(o.clientName || "").toLowerCase().includes(search.toLowerCase());
     const matchStatus = statusFilter === "all" || o.status === statusFilter;
     return matchSearch && matchStatus;
   });
