@@ -69,21 +69,22 @@ export default function ProductsPage() {
   const [form, setForm] = useState(emptyItem);
   const [sortKey, setSortKey] = useState<keyof InventoryItem>("name");
   const [sortAsc, setSortAsc] = useState(true);
+  const [categoryFilter, setCategoryFilter] = useState<"medicine" | "extras">("medicine");
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 50;
 
-  const criticalCount = products.filter((p) => p.stock < 10).length;
+  const criticalCount = products.filter((p) => p.stock < 10 && p.category !== "extras").length;
   const expiringSoonCount = products.filter(
-    (p) => parseExpiryDate(p.expDate).isExpiringSoon
+    (p) => parseExpiryDate(p.expDate).isExpiringSoon && p.category !== "extras"
   ).length;
-  const totalValue = products.reduce((s, p) => s + p.salePrice * p.stock, 0);
+  const totalValue = products.filter(p => p.category !== "extras").reduce((s, p) => s + p.salePrice * p.stock, 0);
 
   const filtered = products
     .filter(
       (p) =>
-        p.category !== "extras" &&
+        (p.category || "medicine") === categoryFilter &&
         (p.name.toLowerCase().includes(search.toLowerCase()) ||
         p.company.toLowerCase().includes(search.toLowerCase()) ||
         p.formula.toLowerCase().includes(search.toLowerCase()) ||
@@ -208,17 +209,16 @@ export default function ProductsPage() {
             className="pl-9"
           />
         </div>
-        <Select onValueChange={(val) => {
-          const item = products.find(i => i.id === val);
-          if (item) openEdit(item);
+        <Select value={categoryFilter} onValueChange={(val: any) => {
+          setCategoryFilter(val);
+          setCurrentPage(1);
         }}>
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="Extras Category" />
+          <SelectTrigger className="w-[150px]">
+            <SelectValue placeholder="Category" />
           </SelectTrigger>
           <SelectContent>
-            {products.filter(i => i.category === "extras").map(item => (
-              <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>
-            ))}
+            <SelectItem value="medicine">Medicines</SelectItem>
+            <SelectItem value="extras">Extras</SelectItem>
           </SelectContent>
         </Select>
       </div>

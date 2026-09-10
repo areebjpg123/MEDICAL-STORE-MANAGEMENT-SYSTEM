@@ -200,7 +200,7 @@ export default function CustomerStorefront({ initialProducts }: { initialProduct
                            {order.status}
                          </span>
                        </div>
-                       <p className="text-sm text-slate-500">{new Date(order.created_at).toLocaleString()}</p>
+                       <p suppressHydrationWarning className="text-sm text-slate-500">{new Date(order.created_at).toLocaleString()}</p>
                        <p className="text-sm mt-2 text-slate-700 dark:text-slate-300">
                          {Array.isArray(order.items) ? order.items.map((i:any) => `${i.quantity}x ${i.name}`).join(', ') : 'Items recorded'}
                        </p>

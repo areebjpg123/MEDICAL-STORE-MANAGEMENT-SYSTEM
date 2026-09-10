@@ -183,7 +183,7 @@ export default function OrdersPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-1">
                       <h3 className="font-bold text-lg">Order #{order.receipt_number || 'N/A'}</h3>
-                      <span className="text-sm text-slate-500">{new Date(order.created_at).toLocaleString()}</span>
+                      <span suppressHydrationWarning className="text-sm text-slate-500">{new Date(order.created_at).toLocaleString()}</span>
                     </div>
                     <p className="text-slate-900 dark:text-slate-200 font-medium">{order.client_name} <span className="text-slate-400 font-normal">({order.customer_phone})</span></p>
                     <p className="text-sm text-slate-500 line-clamp-1">{order.customer_address}</p>
@@ -214,7 +214,7 @@ export default function OrdersPage() {
             <div className="p-6 border-b border-slate-200 dark:border-zinc-800 flex justify-between items-center">
               <div>
                 <h2 className="text-2xl font-bold">Order #{selectedOrder.receipt_number || 'N/A'}</h2>
-                <p className="text-slate-500">{new Date(selectedOrder.created_at).toLocaleString()}</p>
+                <p suppressHydrationWarning className="text-slate-500">{new Date(selectedOrder.created_at).toLocaleString()}</p>
               </div>
               <button onClick={() => setSelectedOrder(null)} className="text-slate-400 hover:text-slate-700"><X size={24} /></button>
             </div>

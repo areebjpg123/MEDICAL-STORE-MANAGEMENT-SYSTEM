@@ -73,6 +73,7 @@ export default function POSPage() {
   } = useCartStore();
 
   const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<"medicine" | "extras">("medicine");
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [clientName, setClientName] = useState("");
   const [paymentTerms, setPaymentTerms] = useState("cash");
@@ -86,13 +87,17 @@ export default function POSPage() {
 
   const filtered = inventoryItems.filter(
     (p) =>
-      p.category !== "extras" &&
+      (p.category || "medicine") === categoryFilter &&
       (p.name.toLowerCase().includes(search.toLowerCase()) ||
       p.company.toLowerCase().includes(search.toLowerCase()) ||
       p.expDate.includes(search))
   );
 
   function handleAddItem(product: InventoryItem) {
+    if (product.stock <= 0 && product.category !== "extras") {
+      toast.error(`Cannot add ${product.name}, out of stock!`);
+      return;
+    }
     const item: CartItem = {
       id: product.id,
       name: product.name,
@@ -196,17 +201,13 @@ export default function POSPage() {
                 className="pl-9 text-sm"
               />
             </div>
-            <Select onValueChange={(val) => {
-              const item = inventoryItems.find(i => i.id === val);
-              if (item) handleAddItem(item);
-            }}>
+            <Select value={categoryFilter} onValueChange={(val: any) => setCategoryFilter(val)}>
               <SelectTrigger className="w-[130px]">
-                <SelectValue placeholder="Extras" />
+                <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
-                {inventoryItems.filter(i => i.category === "extras").map(item => (
-                  <SelectItem key={item.id} value={item.id}>{item.name} (Exp: {item.expDate}, Rs {item.salePrice}, Qty: {item.stock})</SelectItem>
-                ))}
+                <SelectItem value="medicine">Medicines</SelectItem>
+                <SelectItem value="extras">Extras</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -621,7 +622,7 @@ export default function POSPage() {
           <h2 className="text-xl font-bold mb-1">Hassan Medical Store ERP</h2>
           <p>Client: {clientName || "Walk-in Customer"}</p>
           <p>{phone ? `Phone: ${phone}` : ""}</p>
-          <p>Date: {new Date().toLocaleString()}</p>
+          <p suppressHydrationWarning>Date: {new Date().toLocaleString()}</p>
         </div>
         <div className="border-b border-black border-dashed mb-2 pb-1 flex justify-between font-bold">
           <span className="w-1/2">Medicine</span>
