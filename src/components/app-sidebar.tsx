@@ -16,7 +16,8 @@ import {
   X,
   Wifi,
   WifiOff,
-  BellRing
+  BellRing,
+  PieChart
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -60,6 +61,7 @@ function NavContent({ pathname }: { pathname: string }) {
     { href: "/orders", label: "Online Orders", icon: BellRing, badge: pendingOrdersCount },
     { href: "/products", label: "Inventory", icon: Package },
     { href: "/revenue", label: "Revenue & Analytics", icon: LayoutDashboard },
+    { href: "/purchase-analytics", label: "Purchase Analytics", icon: PieChart },
     { href: "/ledger", label: "Ledger", icon: BookOpen },
     { href: "/history", label: "History", icon: History },
     { href: "/settings", label: "Settings", icon: Settings },

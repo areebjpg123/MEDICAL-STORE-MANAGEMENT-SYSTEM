@@ -59,6 +59,13 @@ const emptyItem: Omit<InventoryItem, "id"> = {
   orderNumber: "",
   orderDate: "",
   billImage: "",
+  purchaseSource: "market",
+  baseAmount: 0,
+  tradeDiscount: 15,
+  taxPercentage: 0,
+  extraDiscount: 0,
+  bonusQuantity: 0,
+  netCost: 0,
 };
 
 export default function ProductsPage() {
@@ -138,6 +145,13 @@ export default function ProductsPage() {
       orderNumber: product.orderNumber || "",
       orderDate: product.orderDate || "",
       billImage: product.billImage || "",
+      purchaseSource: product.purchaseSource || "market",
+      baseAmount: product.baseAmount || 0,
+      tradeDiscount: product.tradeDiscount !== undefined ? product.tradeDiscount : 15,
+      taxPercentage: product.taxPercentage || 0,
+      extraDiscount: product.extraDiscount || 0,
+      bonusQuantity: product.bonusQuantity || 0,
+      netCost: product.netCost || 0,
     });
     setDialogOpen(true);
   }
@@ -152,11 +166,36 @@ export default function ProductsPage() {
       return;
     }
 
+    // Auto calculate net cost
+    const base = form.baseAmount || 0;
+    const tpDiscount = form.tradeDiscount !== undefined ? form.tradeDiscount : 15;
+    const subtotal1 = base - (base * (tpDiscount / 100));
+    
+    const taxRate = form.purchaseSource === "company" ? 0.5 : 0;
+    const taxAmt = subtotal1 * (taxRate / 100);
+    const subtotal2 = subtotal1 + taxAmt;
+    
+    const extra = form.extraDiscount || 0;
+    const finalPerUnit = subtotal2 - (subtotal2 * (extra / 100));
+    
+    const paidQty = form.stock || 0;
+    const totalCostForBatch = finalPerUnit * paidQty;
+    const totalQty = paidQty + (form.bonusQuantity || 0);
+    
+    const netCost = totalQty > 0 ? (totalCostForBatch / totalQty) : finalPerUnit;
+    
+    const finalForm = { ...form };
+    if (base > 0) {
+      finalForm.netCost = Number(netCost.toFixed(2));
+      finalForm.costPrice = Number(netCost.toFixed(2));
+      finalForm.taxPercentage = taxRate;
+    }
+
     if (editing) {
-      updateItem(editing.id, form);
+      updateItem(editing.id, finalForm);
       toast.success("Inventory item updated");
     } else {
-      addItem(form);
+      addItem(finalForm);
       toast.success("Inventory item added");
     }
     setDialogOpen(false);
@@ -434,6 +473,40 @@ export default function ProductsPage() {
                   }
                 }}
               />
+            </div>
+            
+            {/* Purchase Analytics Fields */}
+            <div className="col-span-2 pt-4 mt-2 border-t border-slate-200 dark:border-zinc-800">
+              <h3 className="font-bold text-slate-900 dark:text-white mb-4">Purchase Analytics Details (Internal)</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Purchase Source</Label>
+                  <select
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                    value={form.purchaseSource || "market"}
+                    onChange={(e) => setForm({ ...form, purchaseSource: e.target.value as "company" | "market" })}
+                  >
+                    <option value="company">Company</option>
+                    <option value="market">Market</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Base Amount (Per Unit)</Label>
+                  <Input type="number" value={form.baseAmount || ""} onChange={(e) => setForm({ ...form, baseAmount: Number(e.target.value) })} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Trade Price Discount (%)</Label>
+                  <Input type="number" value={form.tradeDiscount !== undefined ? form.tradeDiscount : 15} onChange={(e) => setForm({ ...form, tradeDiscount: Number(e.target.value) })} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Extra Discount (%)</Label>
+                  <Input type="number" value={form.extraDiscount || ""} onChange={(e) => setForm({ ...form, extraDiscount: Number(e.target.value) })} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Bonus Quantity (Free Items)</Label>
+                  <Input type="number" value={form.bonusQuantity || ""} onChange={(e) => setForm({ ...form, bonusQuantity: Number(e.target.value) })} />
+                </div>
+              </div>
             </div>
           </div>
           <DialogFooter>

@@ -1,0 +1,9 @@
+-- Add Purchase Analytics columns to the products table
+ALTER TABLE public.products
+ADD COLUMN IF NOT EXISTS purchase_source TEXT DEFAULT 'market',
+ADD COLUMN IF NOT EXISTS base_amount NUMERIC DEFAULT 0,
+ADD COLUMN IF NOT EXISTS trade_discount NUMERIC DEFAULT 15,
+ADD COLUMN IF NOT EXISTS tax_percentage NUMERIC DEFAULT 0,
+ADD COLUMN IF NOT EXISTS extra_discount NUMERIC DEFAULT 0,
+ADD COLUMN IF NOT EXISTS bonus_quantity INTEGER DEFAULT 0,
+ADD COLUMN IF NOT EXISTS net_cost NUMERIC DEFAULT 0;

@@ -18,6 +18,13 @@ export type InventoryItem = {
   orderNumber?: string;
   orderDate?: string;
   billImage?: string;
+  purchaseSource?: "company" | "market";
+  baseAmount?: number;
+  tradeDiscount?: number;
+  taxPercentage?: number;
+  extraDiscount?: number;
+  bonusQuantity?: number;
+  netCost?: number;
 };
 
 interface InventoryState {
@@ -45,6 +52,13 @@ const mapToFrontend = (dbProduct: any): InventoryItem => ({
   boxQty: dbProduct.box_quantity || 0,
   section: dbProduct.section || "OTC",
   category: dbProduct.category || "medicine",
+  purchaseSource: dbProduct.purchase_source || "market",
+  baseAmount: Number(dbProduct.base_amount) || 0,
+  tradeDiscount: Number(dbProduct.trade_discount) || 15,
+  taxPercentage: Number(dbProduct.tax_percentage) || 0,
+  extraDiscount: Number(dbProduct.extra_discount) || 0,
+  bonusQuantity: Number(dbProduct.bonus_quantity) || 0,
+  netCost: Number(dbProduct.net_cost) || 0,
 });
 
 const mapToBackend = (item: Partial<InventoryItem>) => {
@@ -59,6 +73,13 @@ const mapToBackend = (item: Partial<InventoryItem>) => {
   if (item.boxQty !== undefined) db.box_quantity = item.boxQty;
   if (item.section !== undefined) db.section = item.section;
   if (item.category !== undefined) db.category = item.category;
+  if (item.purchaseSource !== undefined) db.purchase_source = item.purchaseSource;
+  if (item.baseAmount !== undefined) db.base_amount = item.baseAmount;
+  if (item.tradeDiscount !== undefined) db.trade_discount = item.tradeDiscount;
+  if (item.taxPercentage !== undefined) db.tax_percentage = item.taxPercentage;
+  if (item.extraDiscount !== undefined) db.extra_discount = item.extraDiscount;
+  if (item.bonusQuantity !== undefined) db.bonus_quantity = item.bonusQuantity;
+  if (item.netCost !== undefined) db.net_cost = item.netCost;
   return db;
 };
 
