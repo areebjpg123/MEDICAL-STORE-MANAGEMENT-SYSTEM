@@ -33,8 +33,12 @@ export default function PurchaseAnalyticsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 50;
 
-  // Filter out items that have no base amount (assuming they were added before analytics was introduced)
-  const analyticsProducts = products.filter(p => p.baseAmount && p.baseAmount > 0);
+  // Show all products, fallback to costPrice if baseAmount is missing
+  const analyticsProducts = products.map((p) => ({
+    ...p,
+    baseAmount: p.baseAmount && p.baseAmount > 0 ? p.baseAmount : p.costPrice || p.salePrice * 0.7,
+    netCost: p.netCost && p.netCost > 0 ? p.netCost : p.costPrice || p.salePrice * 0.7,
+  }));
 
   const filtered = analyticsProducts
     .filter(

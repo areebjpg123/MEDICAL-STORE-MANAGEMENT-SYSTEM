@@ -26,8 +26,6 @@ import { createClient } from "@/utils/supabase/client";
 
 function NavContent({ pathname }: { pathname: string }) {
   const [isOnline, setIsOnline] = useState(true);
-  const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
-
   useEffect(() => {
     setIsOnline(navigator.onLine);
     const handleOnline = () => setIsOnline(true);
@@ -40,25 +38,9 @@ function NavContent({ pathname }: { pathname: string }) {
     };
   }, []);
 
-  useEffect(() => {
-    const supabase = createClient();
-    const fetchPending = async () => {
-      const { count } = await supabase.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'PENDING');
-      setPendingOrdersCount(count || 0);
-    };
-    fetchPending();
-
-    const channel = supabase.channel('sidebar_orders')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, fetchPending)
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); }
-  }, []);
-
   const navItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/pos", label: "Point of Sale", icon: ShoppingCart },
-    { href: "/orders", label: "Online Orders", icon: BellRing, badge: pendingOrdersCount },
     { href: "/products", label: "Inventory", icon: Package },
     { href: "/revenue", label: "Revenue & Analytics", icon: LayoutDashboard },
     { href: "/purchase-analytics", label: "Purchase Analytics", icon: PieChart },

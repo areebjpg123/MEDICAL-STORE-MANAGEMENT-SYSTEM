@@ -212,7 +212,7 @@ export default function ProductsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Inventory</h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p suppressHydrationWarning className="text-sm text-muted-foreground mt-1">
             {products.length} items in inventory · Stock value Rs {totalValue.toLocaleString("en-PK")}
           </p>
         </div>
@@ -403,7 +403,7 @@ export default function ProductsPage() {
           <DialogHeader>
             <DialogTitle>{editing ? "Edit Inventory Item" : "Add Inventory Item"}</DialogTitle>
           </DialogHeader>
-          <div className="grid grid-cols-2 gap-4 py-2">
+          <div className="grid grid-cols-2 gap-4 py-2 max-h-[70vh] overflow-y-auto px-1">
             <div className="col-span-2 space-y-2">
               <Label>Medicine Name *</Label>
               <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Panadol 500mg" />

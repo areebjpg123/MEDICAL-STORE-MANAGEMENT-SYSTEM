@@ -59,6 +59,9 @@ const mapToFrontend = (dbProduct: any): InventoryItem => ({
   extraDiscount: Number(dbProduct.extra_discount) || 0,
   bonusQuantity: Number(dbProduct.bonus_quantity) || 0,
   netCost: Number(dbProduct.net_cost) || 0,
+  orderNumber: dbProduct.order_number || "",
+  orderDate: dbProduct.order_date || "",
+  billImage: dbProduct.bill_image || "",
 });
 
 const mapToBackend = (item: Partial<InventoryItem>) => {
@@ -80,6 +83,9 @@ const mapToBackend = (item: Partial<InventoryItem>) => {
   if (item.extraDiscount !== undefined) db.extra_discount = item.extraDiscount;
   if (item.bonusQuantity !== undefined) db.bonus_quantity = item.bonusQuantity;
   if (item.netCost !== undefined) db.net_cost = item.netCost;
+  if (item.orderNumber !== undefined) db.order_number = item.orderNumber;
+  if (item.orderDate !== undefined) db.order_date = item.orderDate;
+  if (item.billImage !== undefined) db.bill_image = item.billImage;
   return db;
 };
 

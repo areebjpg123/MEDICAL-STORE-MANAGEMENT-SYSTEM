@@ -37,7 +37,7 @@ interface OrderState {
 
 const mapToFrontend = (dbOrder: any): Order => ({
   id: dbOrder.id,
-  receiptNumber: dbOrder.receipt_number || "",
+  receiptNumber: dbOrder.receipt_number ? `RCP-${dbOrder.receipt_number}` : "",
   clientName: dbOrder.client_name || "",
   date: dbOrder.date || "",
   total: dbOrder.total || 0,
@@ -51,7 +51,6 @@ const mapToFrontend = (dbOrder: any): Order => ({
 const mapToBackend = (order: Partial<Order>) => {
   const db: any = {};
   if (order.id !== undefined) db.id = order.id;
-  if (order.receiptNumber !== undefined) db.receipt_number = order.receiptNumber;
   if (order.clientName !== undefined) db.client_name = order.clientName;
   if (order.date !== undefined) db.date = order.date;
   if (order.total !== undefined) db.total = order.total;
@@ -144,7 +143,7 @@ export const useOrderStore = create<OrderState>((set, get) => {
     addOrder: async (newOrderData) => {
       const newOrder: Order = {
         ...newOrderData,
-        id: Date.now().toString(),
+        id: crypto.randomUUID(),
         date: new Date().toISOString(),
         status: "DISPATCHED",
         deliveryMethod: newOrderData.deliveryMethod || "shop",
