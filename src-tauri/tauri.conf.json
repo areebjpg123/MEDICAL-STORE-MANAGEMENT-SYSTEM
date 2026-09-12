@@ -46,7 +46,7 @@
       "endpoints": [
         "https://github.com/areebjpg123/MEDICAL-STORE-MANAGEMENT-SYSTEM/releases/latest/download/latest.json?v={{current_version}}"
       ],
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDQwOEZCQjRCQjBDMzdERTkKUldUcGZjT3dTN3VQUUczbEdRSUNiWHlKR05nZGlUVU00d1ZmeUxBZmNzVHVmNG8zNTI2bW1NcTIK"
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDRDOEI1NUY1NDUyNzQyM0IKUldRN1FpZEY5VldMVEVDZWVLNXJ2WWd5eGd6WmtMSUNxOENLWXBWSXVhcnhMbExzazhBYlpSU1oK"
     }
   }
 }
