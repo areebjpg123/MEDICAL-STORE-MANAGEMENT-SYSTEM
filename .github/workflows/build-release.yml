@@ -25,8 +25,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: 'npm'
+          node-version: 24
 
       - name: Install dependencies
         run: npm install
@@ -38,6 +37,9 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NEXT_PUBLIC_SUPABASE_URL: "https://ybbzwdivlawjfalmqnuj.supabase.co"
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InliYnp3ZGl2bGF3amZhbG1xbnVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg2MDk5MjYsImV4cCI6MjEwNDE4NTkyNn0.rRm5iWu1BiX_vlwvDV8Cg9PAOD3iEeFjVx8BikJycF0"
+          SUPABASE_SERVICE_ROLE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InliYnp3ZGl2bGF3amZhbG1xbnVqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4ODYwOTkyNiwiZXhwIjoyMTA0MTg1OTI2fQ.PFF2VSp1H8EeDZ3--Sxb5qL8GL9Sg0B0x5OStqWvYjQ"
         with:
           tagName: app-v__VERSION__ # the action automatically replaces __VERSION__ with the app version
           releaseName: 'Medical Store App v__VERSION__'
