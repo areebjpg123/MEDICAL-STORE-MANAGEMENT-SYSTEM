@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
+  Scan,
   ShoppingCart,
   Plus,
   Minus,
@@ -48,6 +49,8 @@ import { useInventoryStore, InventoryItem } from "@/store/useInventoryStore";
 import { useOrderStore } from "@/store/useOrderStore";
 import { useCartStore, CartItem } from "@/store/useCartStore";
 import { parseExpiryDate } from "@/lib/expiry";
+import LiveClock from "@/components/LiveClock";
+import CodeScanner from "@/components/CodeScanner";
 
 export default function POSPage() {
   const { items: inventoryItems, deductStockById } = useInventoryStore();
@@ -73,11 +76,12 @@ export default function POSPage() {
   } = useCartStore();
 
   const [search, setSearch] = useState("");
+  const [isScanning, setIsScanning] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<"medicine" | "extras">("medicine");
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [clientName, setClientName] = useState("");
   const [paymentTerms, setPaymentTerms] = useState("cash");
-  const [deliveryMethod, setDeliveryMethod] = useState<"shop" | "home_delivery">("shop");
+
   const [phone, setPhone] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -90,7 +94,8 @@ export default function POSPage() {
       (p.category || "medicine") === categoryFilter &&
       (p.name.toLowerCase().includes(search.toLowerCase()) ||
       p.company.toLowerCase().includes(search.toLowerCase()) ||
-      p.expDate.includes(search))
+      p.expDate.includes(search) ||
+      (p.barcode && p.barcode.toLowerCase() === search.toLowerCase()))
   );
 
   function handleAddItem(product: InventoryItem) {
@@ -158,7 +163,7 @@ export default function POSPage() {
       clientName: clientName || "Walk-in Customer",
       total: officialTotal,
       originalTotal: officialSubtotal,
-      deliveryMethod,
+
       items: officialCart.map((i) => ({
         name: i.name,
         qty: i.quantity,
@@ -182,24 +187,34 @@ export default function POSPage() {
   }
 
   return (
-    <div className="flex flex-col xl:flex-row h-[calc(100vh-0px)] md:h-screen overflow-hidden">
+    <div className="flex flex-col xl:flex-row min-h-[calc(100vh-64px)] xl:h-[calc(100vh-64px)] overflow-y-auto xl:overflow-hidden">
       {/* Left Section — Inventory Search Catalog */}
-      <div className="w-full xl:w-[55%] flex flex-col p-4 lg:p-6 overflow-hidden border-b xl:border-b-0 xl:border-r">
-        <div className="flex items-center justify-between gap-3 mb-4">
-          <div>
-            <h1 className="text-xl font-bold tracking-tight">Point of Sale</h1>
-            <p className="text-xs text-muted-foreground">Select inventory items to bill</p>
+      <div className="w-full xl:w-[55%] min-h-[500px] xl:min-h-0 flex-1 xl:flex-none flex flex-col p-4 lg:p-6 overflow-hidden border-b xl:border-b-0 xl:border-r">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
+          <div className="flex items-center gap-4">
+            <div>
+              <h1 className="text-xl font-bold tracking-tight">Point of Sale</h1>
+              <p className="text-xs text-muted-foreground">Select inventory items to bill</p>
+            </div>
+            <div className="hidden sm:block">
+              <LiveClock />
+            </div>
           </div>
           <div className="relative flex-1 max-w-[400px] flex gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                ref={searchRef}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search by name, company, exp..."
-                className="pl-9 text-sm"
-              />
+            <div className="relative flex-1 flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  ref={searchRef}
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search by name, company, exp..."
+                  className="pl-9 text-sm"
+                />
+              </div>
+              <Button variant="outline" size="icon" onClick={() => setIsScanning(true)} title="Scan Barcode">
+                <Scan className="w-4 h-4 text-muted-foreground" />
+              </Button>
             </div>
             <Select value={categoryFilter} onValueChange={(val: any) => setCategoryFilter(val)}>
               <SelectTrigger className="w-[130px]">
@@ -212,6 +227,16 @@ export default function POSPage() {
             </Select>
           </div>
         </div>
+
+        {isScanning && (
+          <CodeScanner
+            onDetected={(result) => {
+              setSearch(result.value);
+              setIsScanning(false);
+            }}
+            onClose={() => setIsScanning(false)}
+          />
+        )}
 
         <ScrollArea className="flex-1">
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pr-2">
@@ -268,7 +293,7 @@ export default function POSPage() {
       </div>
 
 {/* Right Section — DUAL CALCULATION PANELS (Tabs instead of side-by-side) */}
-      <div className="w-full xl:w-[45%] flex flex-col bg-card/30 overflow-hidden border-t xl:border-t-0">
+      <div className="w-full xl:w-[45%] min-h-[600px] xl:min-h-0 flex-1 xl:flex-none flex flex-col bg-card/30 overflow-hidden border-t xl:border-t-0">
         <Tabs defaultValue="official" className="flex-1 flex flex-col overflow-hidden">
           <div className="px-3 pt-3 border-b flex-shrink-0 bg-background/50 backdrop-blur-sm z-10">
             <TabsList className="grid w-full grid-cols-2 h-11">
@@ -579,18 +604,7 @@ export default function POSPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label>Delivery Method</Label>
-              <Select value={deliveryMethod} onValueChange={(v) => setDeliveryMethod(v as "shop" | "home_delivery")}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="shop">Shop Sales</SelectItem>
-                  <SelectItem value="home_delivery">Home Delivery</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+
             <Separator />
             <div className="flex justify-between font-bold text-lg">
               <span>Total Payable</span>
@@ -600,12 +614,29 @@ export default function POSPage() {
           <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button
               variant="outline"
-              onClick={() => {
-                toast.info("Preparing receipt for printing...");
-                setTimeout(() => window.print(), 100);
+              onClick={async () => {
+                try {
+                  toast.info("Connecting to USB Printer...");
+                  const { printReceiptESC } = await import("@/lib/printer");
+                  await printReceiptESC(
+                    'usb',
+                    '',
+                    clientName,
+                    phone,
+                    officialCart,
+                    officialSubtotal,
+                    officialDiscountPct,
+                    officialDiscountAmt,
+                    officialTotal
+                  );
+                  toast.success("Receipt printed instantly!");
+                } catch (err: any) {
+                  console.error(err);
+                  toast.error("Printer error: " + err.message);
+                }
               }}
             >
-              <Receipt className="w-4 h-4 mr-2" /> Print Receipt
+              <Receipt className="w-4 h-4 mr-2" /> Print Receipt (ESC/POS)
             </Button>
             <Button onClick={handleDispatchOrder}>
               <Check className="w-4 h-4 mr-1" />

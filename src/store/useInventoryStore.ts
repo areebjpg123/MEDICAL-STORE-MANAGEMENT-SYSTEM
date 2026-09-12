@@ -14,6 +14,7 @@ export type InventoryItem = {
   stock: number;
   boxQty: number;
   section: string;
+  barcode?: string;
   category?: "medicine" | "extras";
   orderNumber?: string;
   orderDate?: string;
@@ -51,6 +52,7 @@ const mapToFrontend = (dbProduct: any): InventoryItem => ({
   stock: dbProduct.stock_quantity || 0,
   boxQty: dbProduct.box_quantity || 0,
   section: dbProduct.section || "OTC",
+  barcode: dbProduct.barcode || "",
   category: dbProduct.category || "medicine",
   purchaseSource: dbProduct.purchase_source || "market",
   baseAmount: Number(dbProduct.base_amount) || 0,
@@ -75,6 +77,7 @@ const mapToBackend = (item: Partial<InventoryItem>) => {
   if (item.stock !== undefined) db.stock_quantity = item.stock;
   if (item.boxQty !== undefined) db.box_quantity = item.boxQty;
   if (item.section !== undefined) db.section = item.section;
+  if (item.barcode !== undefined) db.barcode = item.barcode;
   if (item.category !== undefined) db.category = item.category;
   if (item.purchaseSource !== undefined) db.purchase_source = item.purchaseSource;
   if (item.baseAmount !== undefined) db.base_amount = item.baseAmount;

@@ -19,7 +19,6 @@ export type Order = {
   total: number;
   originalTotal: number;
   costTotal?: number;
-  deliveryMethod?: "shop" | "home_delivery";
   status: "DISPATCHED" | "PENDING" | "CANCELLED" | "REPLACED";
   items: OrderItem[];
 };
@@ -43,7 +42,6 @@ const mapToFrontend = (dbOrder: any): Order => ({
   total: dbOrder.total || 0,
   originalTotal: dbOrder.original_total || 0,
   costTotal: dbOrder.cost_total || 0,
-  deliveryMethod: dbOrder.delivery_method || "shop",
   status: dbOrder.status || "PENDING",
   items: dbOrder.items || [],
 });
@@ -56,7 +54,6 @@ const mapToBackend = (order: Partial<Order>) => {
   if (order.total !== undefined) db.total = order.total;
   if (order.originalTotal !== undefined) db.original_total = order.originalTotal;
   if (order.costTotal !== undefined) db.cost_total = order.costTotal;
-  if (order.deliveryMethod !== undefined) db.delivery_method = order.deliveryMethod;
   if (order.status !== undefined) db.status = order.status;
   if (order.items !== undefined) db.items = order.items;
   return db;
@@ -146,7 +143,6 @@ export const useOrderStore = create<OrderState>((set, get) => {
         id: crypto.randomUUID(),
         date: new Date().toISOString(),
         status: "DISPATCHED",
-        deliveryMethod: newOrderData.deliveryMethod || "shop",
         costTotal: newOrderData.items.reduce((sum, item) => sum + (item.costPrice || item.price * 0.7) * item.qty, 0),
       };
 

@@ -38,7 +38,7 @@ function NavContent({ pathname }: { pathname: string }) {
     };
   }, []);
 
-  const navItems = [
+  const navItems: Array<{href: string, label: string, icon: any, badge?: number}> = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/pos", label: "Point of Sale", icon: ShoppingCart },
     { href: "/products", label: "Inventory", icon: Package },

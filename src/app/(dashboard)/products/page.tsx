@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
+  Scan,
   Plus,
   Pencil,
   Trash2,
@@ -55,6 +56,7 @@ const emptyItem: Omit<InventoryItem, "id"> = {
   stock: 0,
   boxQty: 0,
   section: "OTC",
+  barcode: "",
   category: "medicine",
   orderNumber: "",
   orderDate: "",
@@ -68,9 +70,12 @@ const emptyItem: Omit<InventoryItem, "id"> = {
   netCost: 0,
 };
 
+import CodeScanner from "@/components/CodeScanner";
+
 export default function ProductsPage() {
   const { items: products, addItem, updateItem, deleteItem } = useInventoryStore();
   const [search, setSearch] = useState("");
+  const [isScanning, setIsScanning] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<InventoryItem | null>(null);
   const [form, setForm] = useState(emptyItem);
@@ -141,6 +146,7 @@ export default function ProductsPage() {
       stock: product.stock,
       boxQty: product.boxQty,
       section: product.section,
+      barcode: product.barcode || "",
       category: product.category || "medicine",
       orderNumber: product.orderNumber || "",
       orderDate: product.orderDate || "",
@@ -239,14 +245,19 @@ export default function ProductsPage() {
 
       {/* Search and Extras */}
       <div className="flex gap-4 items-center">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search inventory by name, company, formula, exp date..."
-            className="pl-9"
-          />
+        <div className="relative flex-1 max-w-md flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search inventory by name, company, formula, exp date..."
+              className="pl-9"
+            />
+          </div>
+          <Button variant="outline" size="icon" onClick={() => setIsScanning(true)} title="Scan Barcode">
+            <Scan className="w-4 h-4 text-muted-foreground" />
+          </Button>
         </div>
         <Select value={categoryFilter} onValueChange={(val: any) => {
           setCategoryFilter(val);
@@ -261,6 +272,16 @@ export default function ProductsPage() {
           </SelectContent>
         </Select>
       </div>
+
+      {isScanning && (
+        <CodeScanner
+          onDetected={(result) => {
+            setSearch(result.value);
+            setIsScanning(false);
+          }}
+          onClose={() => setIsScanning(false)}
+        />
+      )}
 
       {/* Table */}
       <Card>
@@ -399,12 +420,12 @@ export default function ProductsPage() {
 
       {/* Add/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>{editing ? "Edit Inventory Item" : "Add Inventory Item"}</DialogTitle>
           </DialogHeader>
-          <div className="grid grid-cols-2 gap-4 py-2 max-h-[70vh] overflow-y-auto px-1">
-            <div className="col-span-2 space-y-2">
+          <div className="grid grid-cols-4 gap-4 py-2 max-h-[85vh] overflow-y-auto px-1">
+            <div className="col-span-4 space-y-2">
               <Label>Medicine Name *</Label>
               <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Panadol 500mg" />
             </div>
@@ -423,6 +444,10 @@ export default function ProductsPage() {
             <div className="space-y-2">
               <Label>Section</Label>
               <Input value={form.section} onChange={(e) => setForm({ ...form, section: e.target.value })} placeholder="OTC or Rx" />
+            </div>
+            <div className="space-y-2">
+              <Label>Barcode</Label>
+              <Input value={form.barcode || ""} onChange={(e) => setForm({ ...form, barcode: e.target.value })} placeholder="Scan or type barcode" />
             </div>
             <div className="space-y-2">
               <Label>Cost Price (Rs)</Label>
@@ -476,9 +501,9 @@ export default function ProductsPage() {
             </div>
             
             {/* Purchase Analytics Fields */}
-            <div className="col-span-2 pt-4 mt-2 border-t border-slate-200 dark:border-zinc-800">
+            <div className="col-span-4 pt-4 mt-2 border-t border-slate-200 dark:border-zinc-800">
               <h3 className="font-bold text-slate-900 dark:text-white mb-4">Purchase Analytics Details (Internal)</h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-5 gap-4">
                 <div className="space-y-2">
                   <Label>Purchase Source</Label>
                   <select

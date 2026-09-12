@@ -34,7 +34,7 @@ export default function RevenuePage() {
     let weekRev = 0, weekProfit = 0;
     let monthRev = 0, monthProfit = 0;
 
-    let shopSales = 0, homeSales = 0;
+    let shopSales = 0;
 
     const dailyMap: Record<string, { name: string, sales: number, profit: number }> = {};
     for (let i = 6; i >= 0; i--) {
@@ -66,8 +66,7 @@ export default function RevenuePage() {
           dailyMap[dateKey].profit += profit;
         }
 
-        if (order.deliveryMethod === "home_delivery") homeSales += rev;
-        else shopSales += rev;
+        shopSales += rev;
       }
       if (isAfter(orderDate, lastMonth)) {
         monthRev += rev;
@@ -79,15 +78,10 @@ export default function RevenuePage() {
       todayRev, todayProfit,
       weekRev, weekProfit,
       monthRev, monthProfit,
-      shopSales, homeSales,
+      shopSales,
       dailyData: Object.values(dailyMap)
     };
   }, [orders]);
-
-  const deliveryData = [
-    { name: 'Shop Sales', value: metrics.shopSales },
-    { name: 'Home Delivery', value: metrics.homeSales },
-  ];
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
@@ -145,8 +139,8 @@ export default function RevenuePage() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2">
+      <div className="grid grid-cols-1 gap-6">
+        <Card>
           <CardHeader>
             <CardTitle>Sales vs Profit (Last 7 Days)</CardTitle>
           </CardHeader>
@@ -176,52 +170,6 @@ export default function RevenuePage() {
                   <Area type="monotone" dataKey="profit" name="Profit" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorProfit)" />
                 </AreaChart>
               </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Delivery Source (7 Days)</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col items-center justify-center">
-            <div className="h-[250px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={deliveryData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={5}
-                    dataKey="value"
-                    stroke="none"
-                  >
-                    {deliveryData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value: any) => [`Rs ${Number(value).toLocaleString("en-PK")}`, undefined]} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            
-            <div className="w-full space-y-3 mt-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm font-medium">
-                  <div className="w-3 h-3 rounded-full bg-emerald-500" />
-                  <Package className="w-4 h-4 text-muted-foreground" /> Shop Sales
-                </div>
-                <span className="font-bold">Rs {metrics.shopSales.toLocaleString("en-PK")}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm font-medium">
-                  <div className="w-3 h-3 rounded-full bg-indigo-500" />
-                  <Home className="w-4 h-4 text-muted-foreground" /> Home Delivery
-                </div>
-                <span className="font-bold">Rs {metrics.homeSales.toLocaleString("en-PK")}</span>
-              </div>
             </div>
           </CardContent>
         </Card>
