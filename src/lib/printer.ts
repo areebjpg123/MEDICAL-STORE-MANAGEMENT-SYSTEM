@@ -1,5 +1,4 @@
 import ReceiptPrinterEncoder from '@point-of-sale/receipt-printer-encoder';
-import WebUSBReceiptPrinter from '@point-of-sale/webusb-receipt-printer';
 import { CartItem } from '../store/useCartStore';
 
 export type PrinterType = 'usb' | 'none';
@@ -88,6 +87,7 @@ export async function printReceiptESC(
 
   // 2. Deliver the bytes
   if (printerType === 'usb') {
+    const { default: WebUSBReceiptPrinter } = await import('./webusb-receipt-printer.js');
     const printer = new WebUSBReceiptPrinter();
     await printer.connect();
     await printer.print(rawBytes);
