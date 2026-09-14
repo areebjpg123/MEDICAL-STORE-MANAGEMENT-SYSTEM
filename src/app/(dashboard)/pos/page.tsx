@@ -229,7 +229,7 @@ export default function POSPage() {
   }
 
   return (
-    <div className="flex flex-col xl:flex-row min-h-[calc(100vh-64px)] xl:h-[calc(100vh-64px)] overflow-y-auto xl:overflow-hidden">
+    <div className="flex flex-col xl:flex-row min-h-[calc(100vh-64px)] xl:h-[calc(100vh-64px)] overflow-y-auto xl:overflow-hidden w-full max-w-[100vw] overflow-x-hidden">
       {/* Left Section — Inventory Search Catalog */}
       <div className="w-full xl:w-[55%] min-h-[500px] xl:min-h-0 flex-1 xl:flex-none flex flex-col p-4 lg:p-6 overflow-hidden border-b xl:border-b-0 xl:border-r">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
