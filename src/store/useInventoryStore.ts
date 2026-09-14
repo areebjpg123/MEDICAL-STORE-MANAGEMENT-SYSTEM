@@ -1,9 +1,8 @@
 import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
 import { parseExpiryDate } from "@/lib/expiry";
 import { createClient } from "@/utils/supabase/client";
 import { queueOperation } from "@/lib/sync";
-import { idbStorage } from "@/lib/idbStorage";
+import { getDB } from "@/lib/db";
 
 export type InventoryItem = {
   id: string;
@@ -94,17 +93,27 @@ const mapToBackend = (item: Partial<InventoryItem>) => {
   return db;
 };
 
-export const useInventoryStore = create<InventoryState>()(
-  persist(
-    (set, get) => {
-      const supabase = createClient();
-      let realtimeChannel: any = null;
+export const useInventoryStore = create<InventoryState>((set, get) => {
+  const supabase = createClient();
+  let realtimeChannel: any = null;
 
-      return {
-        items: [],
-        initialized: false,
+  return {
+    items: [],
+    initialized: false,
 
     fetchItems: async () => {
+      // 1. Instantly load from fast local DB
+      const db = await getDB();
+      try {
+        const localItems = await db.getAll('products');
+        if (localItems.length > 0) {
+          set({ items: localItems as any, initialized: true });
+        }
+      } catch (e) {
+        console.error("Local DB fetch failed", e);
+      }
+
+      // 2. Fetch full sync from online asynchronously
       let allData: any[] = [];
       let from = 0;
       const step = 1000;
@@ -130,41 +139,65 @@ export const useInventoryStore = create<InventoryState>()(
         }
       }
 
-      set({ items: allData.map(mapToFrontend), initialized: true });
+      // 3. Cache the fetched data into IndexedDB individually (avoids huge stringify!)
+      if (allData.length > 0) {
+        const frontendItems = allData.map(mapToFrontend);
+        set({ items: frontendItems, initialized: true });
+        
+        try {
+          const tx = db.transaction('products', 'readwrite');
+          await tx.store.clear();
+          for (const item of frontendItems) {
+            tx.store.put(item as any);
+          }
+          await tx.done;
+        } catch(e) {}
+      }
     },
 
     subscribeToRealtime: () => {
       if (realtimeChannel) return; // Already subscribed
       realtimeChannel = supabase.channel('products-channel')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, (payload) => {
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, async (payload) => {
+          const db = await getDB();
           if (payload.eventType === 'INSERT') {
-            set((state) => ({ items: [...state.items, mapToFrontend(payload.new)] }));
+            const newItem = mapToFrontend(payload.new);
+            set((state) => ({ items: [...state.items, newItem] }));
+            db.put('products', newItem as any);
           } else if (payload.eventType === 'UPDATE') {
+            const updated = mapToFrontend(payload.new);
             set((state) => ({
-              items: state.items.map(item => item.id === payload.new.id ? mapToFrontend(payload.new) : item)
+              items: state.items.map(item => item.id === payload.new.id ? updated : item)
             }));
+            db.put('products', updated as any);
           } else if (payload.eventType === 'DELETE') {
             set((state) => ({ items: state.items.filter(item => item.id !== payload.old.id) }));
+            db.delete('products', payload.old.id);
           }
         })
         .subscribe();
     },
 
     addItem: async (newItem) => {
-      // Optimistic UI update
       const tempId = `temp-${Date.now()}`;
-      set((state) => ({ items: [...state.items, { ...newItem, id: tempId }] }));
+      const itemWithId = { ...newItem, id: tempId };
+      set((state) => ({ items: [...state.items, itemWithId] }));
       
+      const db = await getDB();
+      db.put('products', itemWithId as any);
+
       const dbItem = mapToBackend(newItem);
       const { data, error } = await supabase.from('products').insert(dbItem).select().single();
       
       if (error) {
-        // Fallback to local queue if offline
         queueOperation({ type: "INSERT", table: "products", data: dbItem });
       } else if (data) {
+        const finalItem = mapToFrontend(data);
         set((state) => ({
-          items: state.items.map(item => item.id === tempId ? mapToFrontend(data) : item)
+          items: state.items.map(item => item.id === tempId ? finalItem : item)
         }));
+        db.delete('products', tempId);
+        db.put('products', finalItem as any);
       }
     },
 
@@ -172,6 +205,10 @@ export const useInventoryStore = create<InventoryState>()(
       set((state) => ({
         items: state.items.map((item) => (item.id === id ? { ...item, ...updated } : item)),
       }));
+
+      const db = await getDB();
+      const current = get().items.find(i => i.id === id);
+      if (current) db.put('products', current as any);
 
       const dbItem = mapToBackend(updated);
       const { error } = await supabase.from('products').update(dbItem).eq('id', id);
@@ -182,9 +219,18 @@ export const useInventoryStore = create<InventoryState>()(
     },
 
     deleteItem: async (id) => {
-      set((state) => ({ items: state.items.filter((item) => item.id !== id) }));
+      set((state) => ({
+        items: state.items.filter((item) => item.id !== id),
+      }));
+
+      const db = await getDB();
+      db.delete('products', id);
+
       const { error } = await supabase.from('products').delete().eq('id', id);
-      if (error) queueOperation({ type: "DELETE", table: "products", data: { id } });
+      
+      if (error) {
+        queueOperation({ type: "DELETE", table: "products", data: { id } });
+      }
     },
 
     restockItemByName: async (name, quantity) => {
@@ -204,6 +250,9 @@ export const useInventoryStore = create<InventoryState>()(
     wipeAll: async () => {
       if (!confirm("Are you sure you want to wipe ALL products? This cannot be undone!")) return;
       set({ items: [] });
+      const db = await getDB();
+      await db.clear('products');
+
       const { error } = await supabase.from('products').delete().neq('id', '00000000-0000-0000-0000-000000000000');
       if (error) {
         console.error("Wipe failed", error);
@@ -211,13 +260,7 @@ export const useInventoryStore = create<InventoryState>()(
       }
     },
   };
-},
-{
-  name: "medical-inventory-storage",
-  storage: createJSONStorage(() => idbStorage),
-}
-)
-);
+});
 
 export function getExpiringSoonItems(items: InventoryItem[]) {
   return items.filter((item) => {

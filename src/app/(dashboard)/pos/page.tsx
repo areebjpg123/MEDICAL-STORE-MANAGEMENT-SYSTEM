@@ -89,14 +89,16 @@ export default function POSPage() {
     searchRef.current?.focus();
   }, []);
 
-  const filtered = inventoryItems.filter(
-    (p) =>
-      (p.category || "medicine") === categoryFilter &&
-      (p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.company.toLowerCase().includes(search.toLowerCase()) ||
-      p.expDate.includes(search) ||
-      (p.barcode && p.barcode.toLowerCase() === search.toLowerCase()))
-  );
+  const filteredInventory = inventoryItems
+    .filter(
+      (p) =>
+        (p.category || "medicine") === categoryFilter &&
+        (p.name.toLowerCase().includes(search.toLowerCase()) ||
+        p.company.toLowerCase().includes(search.toLowerCase()) ||
+        p.expDate.includes(search) ||
+        (p.barcode && p.barcode.toLowerCase() === search.toLowerCase()))
+    )
+    .slice(0, 50); // CAP AT 50 FOR PERFORMANCE ON LOW END DEVICES
 
   function handleAddItem(product: InventoryItem) {
     if (product.stock <= 0 && product.category !== "extras") {
@@ -240,7 +242,7 @@ export default function POSPage() {
 
         <ScrollArea className="flex-1">
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pr-2">
-            {filtered.map((product) => {
+            {filteredInventory.map((product) => {
               const expStatus = parseExpiryDate(product.expDate);
               return (
                 <motion.div
