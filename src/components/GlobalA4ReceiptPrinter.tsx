@@ -55,6 +55,11 @@ export function GlobalA4ReceiptPrinter() {
             className="w-[210mm] min-h-[297mm] flex flex-col mb-8 print:mb-0 relative bg-white"
             style={{ padding: '8mm' }}
           >
+            {/* Watermark Logo */}
+            <div className="absolute inset-0 flex items-center justify-center opacity-[0.05] pointer-events-none overflow-hidden z-0">
+               <img src="/receipt-logo.jpg" alt="Watermark" className="w-[150mm] h-[150mm] object-contain rotate-[-15deg] grayscale mix-blend-multiply" />
+            </div>
+
             <div className="flex-1 flex flex-col z-10">
             {pageIndex === 0 && (
               <>
@@ -71,8 +76,7 @@ export function GlobalA4ReceiptPrinter() {
                     <span className="text-[10px] text-slate-500 font-mono mt-0.5 font-bold tracking-widest">{displayId}</span>
                   </div>
                   <div className="flex flex-col items-center justify-center w-1/3">
-                     {/* Replace with actual medical logo if you have one, else text fallback is handled by storeName below */}
-                     <span className="text-4xl text-blue-900">🏥</span>
+                     <img src="/receipt-logo.jpg" alt="Store Logo" className="w-[120px] h-[85px] object-contain mix-blend-multiply" />
                   </div>
                   <div className="flex flex-col items-end w-1/3 pt-1">
                     <span className="text-[6.5px] font-bold tracking-[0.2em] text-slate-800 mb-0.5 mr-0.5 uppercase">Scan to Verify</span>
@@ -126,7 +130,7 @@ export function GlobalA4ReceiptPrinter() {
                    <span className="text-[10px] text-slate-500 font-mono mt-0.5 font-bold tracking-widest">{displayId}</span>
                  </div>
                  <div className="flex flex-col items-center justify-center w-1/3">
-                   <span className="text-3xl text-blue-900">🏥</span>
+                   <img src="/receipt-logo.jpg" alt="Store Logo" className="w-[80px] h-[55px] object-contain mix-blend-multiply" />
                  </div>
                  <div className="flex flex-col items-end w-1/3 pt-0">
                    <span className="text-[6.5px] font-bold tracking-[0.2em] text-slate-800 mb-0.5 mr-0.5">SCAN TO VERIFY</span>
