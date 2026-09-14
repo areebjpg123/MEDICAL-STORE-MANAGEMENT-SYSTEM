@@ -65,7 +65,7 @@ export default function HistoryPage() {
       String(o.clientName || "").toLowerCase().includes(search.toLowerCase());
     const matchStatus = statusFilter === "all" || o.status === statusFilter;
     return matchSearch && matchStatus;
-  });
+  }).slice(0, 50);
 
   function openReplaceModal(order: Order) {
     setSelectedOrder(order);
@@ -163,13 +163,12 @@ export default function HistoryPage() {
         ) : (
           <AnimatePresence>
             {filtered.map((order) => (
-            <motion.div
-              key={order.id}
-              layout
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-            >
+              <motion.div
+                key={order.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+              >
               <Card
                 className="cursor-pointer hover:border-primary/30 transition-colors"
                 onClick={() => setExpandedId(expandedId === order.id ? null : order.id)}
