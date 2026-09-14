@@ -170,7 +170,6 @@ export const useLedgerStore = create<LedgerState>()(
         console.error("Failed to add payment:", error);
       }
     },
-    },
   };
 },
 {
