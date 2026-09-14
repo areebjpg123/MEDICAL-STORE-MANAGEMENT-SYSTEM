@@ -7,6 +7,7 @@ import { useOrderStore } from "@/store/useOrderStore";
 import { check } from "@tauri-apps/plugin-updater";
 import { toast } from "sonner";
 import { registerAutoSync } from "@/lib/sync";
+import { GlobalA4ReceiptPrinter } from "@/components/GlobalA4ReceiptPrinter";
 import { GlobalReceiptPrinter } from "@/components/GlobalReceiptPrinter";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -35,13 +36,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     async function checkForUpdates() {
       try {
         const update = await check();
-        if (update) {
-          toast.info(`Update v${update.version} available! Installing now...`, { duration: 5000 });
+        if (update?.available) {
+          toast.success(`Update ${update.version} available! Downloading...`);
           await update.downloadAndInstall();
-          toast.success("Update installed. Please restart the app.");
+          toast.success("Update installed! Restarting...");
+          // Optionally prompt user to restart
         }
-      } catch (error) {
-        console.log("Auto-updater check skipped or failed (might not be in Tauri env).", error);
+      } catch (e) {
+        console.error("Update check failed", e);
       }
     }
     checkForUpdates();
@@ -56,6 +58,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </main>
       </div>
       <GlobalReceiptPrinter />
+      <GlobalA4ReceiptPrinter />
     </>
   );
 }

@@ -337,18 +337,32 @@ export default function DashboardPage() {
                                 <RotateCcw className="w-3 h-3 mr-1" /> Replace
                               </Button>
                             )}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setPrintOrder(order);
-                                  toast.info("Preparing receipt for printing...");
-                                  setTimeout(() => window.print(), 100);
-                                }}
-                            >
-                              <Eye className="w-3 h-3 mr-1" /> View Receipt
-                            </Button>
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setPrintOrder(order);
+                                    toast.info("Preparing Thermal Receipt...");
+                                    setTimeout(() => window.print(), 100);
+                                  }}
+                                >
+                                  <Eye className="w-3 h-3 mr-1" /> Thermal
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    useOrderStore.getState().setPrintOrderA4(order);
+                                    toast.info("Preparing A4 Invoice...");
+                                    setTimeout(() => window.print(), 100);
+                                  }}
+                                >
+                                  <Eye className="w-3 h-3 mr-1" /> A4
+                                </Button>
+                              </div>
                           </div>
                         </div>
                       </motion.div>

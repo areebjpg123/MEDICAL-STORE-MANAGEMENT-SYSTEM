@@ -30,6 +30,8 @@ interface OrderState {
   initialized: boolean;
   printOrder: Order | null;
   setPrintOrder: (order: Order | null) => void;
+  printOrderA4: Order | null;
+  setPrintOrderA4: (order: Order | null) => void;
   fetchOrders: () => Promise<void>;
   subscribeToRealtime: () => void;
   addOrder: (newOrder: Omit<Order, "id" | "date" | "status" | "costTotal">) => Promise<void>;
@@ -70,7 +72,9 @@ export const useOrderStore = create<OrderState>((set, get) => {
     totalRevenue: 0,
     initialized: false,
     printOrder: null,
-    setPrintOrder: (order) => set({ printOrder: order }),
+    setPrintOrder: (order) => set({ printOrder: order, printOrderA4: null }),
+    printOrderA4: null,
+    setPrintOrderA4: (order) => set({ printOrderA4: order, printOrder: null }),
 
     fetchOrders: async () => {
       // 1. Fast local load
