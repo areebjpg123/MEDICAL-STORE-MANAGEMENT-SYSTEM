@@ -54,7 +54,7 @@ import CodeScanner from "@/components/CodeScanner";
 
 export default function POSPage() {
   const { items: inventoryItems, deductStockById } = useInventoryStore();
-  const { addOrder } = useOrderStore();
+  const { addOrder, setPrintOrder } = useOrderStore();
   const {
     officialCart,
     roughCart,
@@ -688,49 +688,6 @@ export default function POSPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Hidden Printable Thermal Receipt */}
-      <div className="hidden print:block receipt-printable bg-white text-black p-4 text-[12px] leading-tight font-mono w-[80mm] absolute top-0 left-0">
-        <div className="text-center mb-4 flex flex-col items-center">
-          <img src="/receipt-logo.jpg" alt="Hassan Medical Store Logo" className="w-16 h-16 mb-2 object-contain" />
-          <h2 className="text-xl font-bold mb-1">Hassan Medical Store ERP</h2>
-          <p>Client: {clientName || "Walk-in Customer"}</p>
-          <p>{phone ? `Phone: ${phone}` : ""}</p>
-          <p suppressHydrationWarning>Date: {new Date().toLocaleString()}</p>
-        </div>
-        <div className="border-b border-black border-dashed mb-2 pb-1 flex justify-between font-bold">
-          <span className="w-1/2">Medicine</span>
-          <span className="w-1/6 text-center">Qty</span>
-          <span className="w-1/3 text-right">Total</span>
-        </div>
-        <div className="space-y-1 mb-2">
-          {officialCart.map((item) => (
-            <div key={item.id} className="flex justify-between">
-              <span className="w-1/2 truncate pr-1">{item.name}</span>
-              <span className="w-1/6 text-center">{item.quantity}</span>
-              <span className="w-1/3 text-right">{(item.price * item.quantity).toLocaleString()}</span>
-            </div>
-          ))}
-        </div>
-        <div className="border-t border-black border-dashed pt-2 space-y-1">
-          <div className="flex justify-between">
-            <span>Subtotal:</span>
-            <span>Rs {officialSubtotal.toLocaleString()}</span>
-          </div>
-          {officialDiscountPct > 0 && (
-            <div className="flex justify-between">
-              <span>Discount ({officialDiscountPct}%):</span>
-              <span>-Rs {officialDiscountAmt.toLocaleString()}</span>
-            </div>
-          )}
-          <div className="flex justify-between font-bold text-sm mt-1">
-            <span>Total Amount:</span>
-            <span>Rs {officialTotal.toLocaleString()}</span>
-          </div>
-        </div>
-        <div className="text-center mt-6 text-[10px]">
-          <p>Thank you for visiting Hassan Medical Store!</p>
-        </div>
-      </div>
     </div>
   );
 }

@@ -28,6 +28,8 @@ interface OrderState {
   orders: Order[];
   totalRevenue: number;
   initialized: boolean;
+  printOrder: Order | null;
+  setPrintOrder: (order: Order | null) => void;
   fetchOrders: () => Promise<void>;
   subscribeToRealtime: () => void;
   addOrder: (newOrder: Omit<Order, "id" | "date" | "status" | "costTotal">) => Promise<void>;
@@ -67,6 +69,8 @@ export const useOrderStore = create<OrderState>((set, get) => {
     orders: [],
     totalRevenue: 0,
     initialized: false,
+    printOrder: null,
+    setPrintOrder: (order) => set({ printOrder: order }),
 
     fetchOrders: async () => {
       // 1. Fast local load

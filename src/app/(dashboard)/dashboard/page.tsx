@@ -64,7 +64,7 @@ function statusColor(status: string) {
 }
 
 export default function DashboardPage() {
-  const { orders, totalRevenue, processReplacement } = useOrderStore();
+  const { orders, totalRevenue, processReplacement, setPrintOrder } = useOrderStore();
   const { items: inventoryItems } = useInventoryStore();
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -340,11 +340,12 @@ export default function DashboardPage() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toast.info("Preparing receipt for printing...");
-                                setTimeout(() => window.print(), 100);
-                              }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setPrintOrder(order);
+                                  toast.info("Preparing receipt for printing...");
+                                  setTimeout(() => window.print(), 100);
+                                }}
                             >
                               <Eye className="w-3 h-3 mr-1" /> View Receipt
                             </Button>

@@ -7,6 +7,7 @@ import { useOrderStore } from "@/store/useOrderStore";
 import { check } from "@tauri-apps/plugin-updater";
 import { toast } from "sonner";
 import { registerAutoSync } from "@/lib/sync";
+import { GlobalReceiptPrinter } from "@/components/GlobalReceiptPrinter";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { fetchItems, subscribeToRealtime, initialized } = useInventoryStore();
@@ -47,11 +48,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, []);
 
   return (
-    <div className="flex min-h-screen">
-      <AppSidebar />
-      <main className="flex-1 md:pt-0 pt-14 overflow-auto">
-        {children}
-      </main>
-    </div>
+    <>
+      <div className="flex min-h-screen">
+        <AppSidebar />
+        <main className="flex-1 md:pt-0 pt-14 overflow-auto">
+          {children}
+        </main>
+      </div>
+      <GlobalReceiptPrinter />
+    </>
   );
 }
