@@ -20,8 +20,8 @@ const SYNC_STORE_KEY = "pending_sync_queue";
 async function getQueue(): Promise<PendingOperation[]> {
   try {
     const db = await getDB();
-    const queue = await db.get('clients', SYNC_STORE_KEY); // Reusing clients store as keyval
-    return queue || [];
+    const queue = (await db.get('clients', SYNC_STORE_KEY)) as any;
+    return (queue as PendingOperation[]) || [];
   } catch {
     return JSON.parse(localStorage.getItem(SYNC_STORE_KEY) || "[]");
   }
