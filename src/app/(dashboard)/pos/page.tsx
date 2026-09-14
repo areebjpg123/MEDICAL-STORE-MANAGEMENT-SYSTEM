@@ -100,6 +100,46 @@ export default function POSPage() {
     )
     .slice(0, 50); // CAP AT 50 FOR PERFORMANCE ON LOW END DEVICES
 
+  const barcodeBuffer = useRef("");
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if typing in an input
+      if (
+        document.activeElement?.tagName === "INPUT" ||
+        document.activeElement?.tagName === "TEXTAREA"
+      ) {
+        return;
+      }
+
+      if (e.key === "Enter") {
+        if (barcodeBuffer.current.length > 0) {
+          const scannedCode = barcodeBuffer.current;
+          barcodeBuffer.current = "";
+          
+          // Find product by barcode
+          const product = inventoryItems.find(p => p.barcode === scannedCode);
+          if (product) {
+            handleAddItem(product);
+            toast.success(`Scanned: ${product.name}`);
+          } else {
+            toast.error("Barcode not found in inventory!");
+          }
+        }
+      } else if (e.key && e.key.length === 1) {
+        barcodeBuffer.current += e.key;
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        timeoutRef.current = setTimeout(() => {
+          barcodeBuffer.current = "";
+        }, 100); // 100ms timeout for rapid barcode scanner input
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [inventoryItems]); // Depend on inventoryItems so we have latest data
+
   function handleAddItem(product: InventoryItem) {
     if (product.stock <= 0 && product.category !== "extras") {
       toast.error(`Cannot add ${product.name}, out of stock!`);
