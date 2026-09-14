@@ -153,8 +153,15 @@ export default function HistoryPage() {
 
       {/* Orders List */}
       <div className="space-y-3">
-        <AnimatePresence>
-          {filtered.map((order) => (
+        {filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center text-muted-foreground">
+            <History className="w-12 h-12 mb-3 opacity-20" />
+            <p className="text-lg font-medium">No order history found</p>
+            <p className="text-sm">Try adjusting your search or filters.</p>
+          </div>
+        ) : (
+          <AnimatePresence>
+            {filtered.map((order) => (
             <motion.div
               key={order.id}
               layout
@@ -247,7 +254,8 @@ export default function HistoryPage() {
               </Card>
             </motion.div>
           ))}
-        </AnimatePresence>
+          </AnimatePresence>
+        )}
       </div>
 
       {/* Replacement Modal */}

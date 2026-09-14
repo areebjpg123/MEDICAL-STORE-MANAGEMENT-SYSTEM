@@ -1,7 +1,9 @@
 import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
 import { parseExpiryDate } from "@/lib/expiry";
 import { createClient } from "@/utils/supabase/client";
 import { queueOperation } from "@/lib/sync";
+import { idbStorage } from "@/lib/idbStorage";
 
 export type InventoryItem = {
   id: string;
@@ -92,13 +94,15 @@ const mapToBackend = (item: Partial<InventoryItem>) => {
   return db;
 };
 
-export const useInventoryStore = create<InventoryState>((set, get) => {
-  const supabase = createClient();
-  let realtimeChannel: any = null;
+export const useInventoryStore = create<InventoryState>()(
+  persist(
+    (set, get) => {
+      const supabase = createClient();
+      let realtimeChannel: any = null;
 
-  return {
-    items: [],
-    initialized: false,
+      return {
+        items: [],
+        initialized: false,
 
     fetchItems: async () => {
       let allData: any[] = [];
@@ -207,7 +211,13 @@ export const useInventoryStore = create<InventoryState>((set, get) => {
       }
     },
   };
-});
+},
+{
+  name: "medical-inventory-storage",
+  storage: createJSONStorage(() => idbStorage),
+}
+)
+);
 
 export function getExpiringSoonItems(items: InventoryItem[]) {
   return items.filter((item) => {

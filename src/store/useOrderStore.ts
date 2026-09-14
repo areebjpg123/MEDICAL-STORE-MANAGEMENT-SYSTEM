@@ -1,4 +1,6 @@
 import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+import { idbStorage } from "@/lib/idbStorage";
 import { useInventoryStore } from "./useInventoryStore";
 import { createClient } from "@/utils/supabase/client";
 import { queueOperation } from "@/lib/sync";
@@ -59,7 +61,9 @@ const mapToBackend = (order: Partial<Order>) => {
   return db;
 };
 
-export const useOrderStore = create<OrderState>((set, get) => {
+export const useOrderStore = create<OrderState>()(
+  persist(
+    (set, get) => {
   const supabase = createClient();
   let realtimeChannel: any = null;
 
@@ -216,4 +220,10 @@ export const useOrderStore = create<OrderState>((set, get) => {
       }
     },
   };
-});
+},
+{
+  name: "medical-order-storage",
+  storage: createJSONStorage(() => idbStorage),
+}
+)
+);

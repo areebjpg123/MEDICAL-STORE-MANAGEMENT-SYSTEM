@@ -311,8 +311,17 @@ export default function ProductsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              <AnimatePresence>
-                {paginatedProducts.map((product) => {
+              {paginatedProducts.length === 0 ? (
+                 <TableRow>
+                   <TableCell colSpan={9} className="h-48 text-center text-slate-500">
+                     <Package className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                     <p className="text-lg font-medium">No medicines found</p>
+                     <p className="text-sm">Add a new product or adjust your filters.</p>
+                   </TableCell>
+                 </TableRow>
+              ) : (
+                <AnimatePresence>
+                  {paginatedProducts.map((product) => {
                   const expStatus = parseExpiryDate(product.expDate);
                   const isCriticalStock = product.stock < 10;
                   return (
@@ -384,8 +393,9 @@ export default function ProductsPage() {
                       </TableCell>
                     </motion.tr>
                   );
-                })}
-              </AnimatePresence>
+                  })}
+                </AnimatePresence>
+              )}
             </TableBody>
           </Table>
         </ScrollArea>

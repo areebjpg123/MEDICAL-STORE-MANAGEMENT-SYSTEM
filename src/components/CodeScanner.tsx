@@ -10,7 +10,7 @@ import {
   HybridBinarizer 
 } from '@zxing/library';
 import { X, Camera, Zap, ZapOff } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 
 // ── Types ──
 interface DetectionResult {

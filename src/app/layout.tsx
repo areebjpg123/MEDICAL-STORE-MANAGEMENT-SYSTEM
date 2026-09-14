@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import OfflineIndicator from "@/components/offline-indicator";
 import "./globals.css";
 
 const fontSans = Plus_Jakarta_Sans({
@@ -23,6 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${fontSans.variable} font-sans h-full antialiased`}
     >
       <body suppressHydrationWarning className="min-h-full flex flex-col bg-background text-foreground">
+        <OfflineIndicator />
         <TooltipProvider>
           {children}
           <Toaster richColors position="top-right" />

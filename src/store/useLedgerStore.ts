@@ -1,4 +1,6 @@
 import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+import { idbStorage } from "@/lib/idbStorage";
 import { createClient } from "@/utils/supabase/client";
 
 export type ClientBalance = {
@@ -71,7 +73,9 @@ const mapPaymentToBackend = (item: Partial<Payment>) => {
   return db;
 };
 
-export const useLedgerStore = create<LedgerState>((set, get) => {
+export const useLedgerStore = create<LedgerState>()(
+  persist(
+    (set, get) => {
   const supabase = createClient();
   let realtimeChannel: any = null;
 
@@ -166,5 +170,12 @@ export const useLedgerStore = create<LedgerState>((set, get) => {
         console.error("Failed to add payment:", error);
       }
     },
+    },
   };
-});
+},
+{
+  name: "medical-ledger-storage",
+  storage: createJSONStorage(() => idbStorage),
+}
+)
+);
