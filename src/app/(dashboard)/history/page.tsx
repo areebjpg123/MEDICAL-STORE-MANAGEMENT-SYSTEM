@@ -40,7 +40,6 @@ import { Separator } from "@/components/ui/separator";
 function statusColor(status: string) {
   switch (status) {
     case "DISPATCHED": return "bg-green-500/15 text-green-400 border-green-500/20";
-    case "PENDING": return "bg-yellow-500/15 text-yellow-400 border-yellow-500/20";
     case "CANCELLED": return "bg-red-500/15 text-red-400 border-red-500/20";
     case "REPLACED": return "bg-purple-500/15 text-purple-400 border-purple-500/20";
     default: return "";
@@ -147,7 +146,6 @@ export default function HistoryPage() {
             <SelectItem value="all">All Status</SelectItem>
             <SelectItem value="DISPATCHED">Dispatched</SelectItem>
             <SelectItem value="REPLACED">Replaced</SelectItem>
-            <SelectItem value="PENDING">Pending</SelectItem>
             <SelectItem value="CANCELLED">Cancelled</SelectItem>
           </SelectContent>
         </Select>

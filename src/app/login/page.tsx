@@ -34,7 +34,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-zinc-950 p-4">
-      <div className="max-w-md w-full bg-white dark:bg-zinc-900 rounded-xl shadow-xl border border-slate-200 dark:border-zinc-800 p-8 space-y-6">
+      <div className="max-w-md w-full bg-white dark:bg-zinc-900 rounded-md shadow-xl border border-slate-200 dark:border-zinc-800 p-8 space-y-6">
         <div className="flex flex-col items-center justify-center space-y-2 text-center">
           <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mb-2 shadow-lg shadow-blue-500/30">
             <LogIn className="text-white" size={24} />

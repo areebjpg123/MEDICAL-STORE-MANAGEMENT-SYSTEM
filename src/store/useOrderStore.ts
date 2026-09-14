@@ -19,7 +19,7 @@ export type Order = {
   total: number;
   originalTotal: number;
   costTotal?: number;
-  status: "DISPATCHED" | "PENDING" | "CANCELLED" | "REPLACED";
+  status: "DISPATCHED" | "CANCELLED" | "REPLACED";
   items: OrderItem[];
 };
 
@@ -42,7 +42,7 @@ const mapToFrontend = (dbOrder: any): Order => ({
   total: dbOrder.total || 0,
   originalTotal: dbOrder.original_total || 0,
   costTotal: dbOrder.cost_total || 0,
-  status: dbOrder.status || "PENDING",
+  status: dbOrder.status || "DISPATCHED",
   items: dbOrder.items || [],
 });
 

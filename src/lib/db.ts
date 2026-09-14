@@ -26,7 +26,7 @@ interface POSDB extends DBSchema {
       clientName: string;
       items: any[];
       total: number;
-      status: 'PENDING' | 'ACCEPTED' | 'DISPATCHED';
+      status: 'DISPATCHED' | 'CANCELLED' | 'REPLACED';
     };
   };
   clients: {

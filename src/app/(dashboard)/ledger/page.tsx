@@ -190,7 +190,7 @@ export default function LedgerPage() {
         <motion.div {...fadeIn} className="lg:col-span-1">
           <Card className="h-full flex items-center">
             <CardContent className="flex items-center gap-4 p-5">
-              <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10">
+              <div className="flex items-center justify-center w-12 h-12 rounded-md bg-primary/10">
                 <DollarSign className="w-6 h-6 text-primary" />
               </div>
               <div>
