@@ -1,18 +1,20 @@
 import { create } from "zustand";
 import { createClient } from "@/utils/supabase/client";
 import { getDB } from "@/lib/db";
+import { queueOperation } from "@/lib/sync";
 
 export type ClientBalance = {
   id: string;
   name: string;
   phone: string;
-  address: string;
-  balance: number; // Positive means they owe us
+  date: string;
+  totalBilled: number;
+  totalPaid: number;
 };
 
-export type LedgerPayment = {
+export type Payment = {
   id: string;
-  clientId: string;
+  clientId?: string;
   clientName: string;
   phone: string;
   amount: number;
@@ -22,33 +24,35 @@ export type LedgerPayment = {
 
 interface LedgerState {
   clients: ClientBalance[];
-  payments: LedgerPayment[];
+  payments: Payment[];
   initialized: boolean;
   fetchLedger: () => Promise<void>;
   subscribeToRealtime: () => void;
-  addClientBalance: (client: Omit<ClientBalance, "id">) => Promise<void>;
-  updateClientBalance: (id: string, updated: Partial<ClientBalance>) => Promise<void>;
-  addPayment: (payment: Omit<LedgerPayment, "id">) => Promise<void>;
+  addClient: (client: Omit<ClientBalance, "id">) => Promise<void>;
+  updateClient: (id: string, updated: Partial<ClientBalance>) => Promise<void>;
+  addPayment: (payment: Omit<Payment, "id">) => Promise<void>;
 }
 
 const mapClientToFrontend = (db: any): ClientBalance => ({
   id: db.id,
   name: db.name,
   phone: db.phone || "",
-  address: db.address || "",
-  balance: Number(db.balance) || 0,
+  date: db.date || new Date().toISOString(),
+  totalBilled: Number(db.totalBilled) || 0,
+  totalPaid: Number(db.totalPaid) || 0,
 });
 
 const mapClientToBackend = (item: Partial<ClientBalance>) => {
   const db: any = {};
   if (item.name !== undefined) db.name = item.name;
   if (item.phone !== undefined) db.phone = item.phone;
-  if (item.address !== undefined) db.address = item.address;
-  if (item.balance !== undefined) db.balance = item.balance;
+  if (item.date !== undefined) db.date = item.date;
+  if (item.totalBilled !== undefined) db.totalBilled = item.totalBilled;
+  if (item.totalPaid !== undefined) db.totalPaid = item.totalPaid;
   return db;
 };
 
-const mapPaymentToFrontend = (db: any): LedgerPayment => ({
+const mapPaymentToFrontend = (db: any): Payment => ({
   id: db.id,
   clientId: db.client_id,
   clientName: db.client_name,
@@ -58,7 +62,7 @@ const mapPaymentToFrontend = (db: any): LedgerPayment => ({
   notes: db.notes || "",
 });
 
-const mapPaymentToBackend = (item: Partial<LedgerPayment>) => {
+const mapPaymentToBackend = (item: Partial<Payment>) => {
   const db: any = {};
   if (item.clientId !== undefined) db.client_id = item.clientId;
   if (item.clientName !== undefined) db.client_name = item.clientName;
@@ -79,7 +83,6 @@ export const useLedgerStore = create<LedgerState>((set, get) => {
     initialized: false,
 
     fetchLedger: async () => {
-      // 1. Fast local load
       try {
         const db = await getDB();
         const localClients = await db.getAll('clients');
@@ -90,10 +93,9 @@ export const useLedgerStore = create<LedgerState>((set, get) => {
         console.error("Local DB ledger fetch failed");
       }
 
-      // 2. Fetch full sync
       const [clientsRes, paymentsRes] = await Promise.all([
-        supabase.from('ledger_clients').select('*').order('created_at', { ascending: false }),
-        supabase.from('ledger_payments').select('*').order('date', { ascending: false }).limit(500),
+        supabase.from('clients').select('*').order('date', { ascending: false }),
+        supabase.from('payments').select('*').order('date', { ascending: false }).limit(500),
       ]);
 
       if (clientsRes.data) {
@@ -120,7 +122,7 @@ export const useLedgerStore = create<LedgerState>((set, get) => {
       if (realtimeChannel) return;
       
       realtimeChannel = supabase.channel('ledger-channel')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'ledger_clients' }, async (payload) => {
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'clients' }, async (payload) => {
           const db = await getDB();
           if (payload.eventType === 'INSERT') {
             const newClient = mapClientToFrontend(payload.new);
@@ -134,13 +136,13 @@ export const useLedgerStore = create<LedgerState>((set, get) => {
             db.put('clients', updated as any);
           }
         })
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ledger_payments' }, (payload) => {
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'payments' }, (payload) => {
           set((state) => ({ payments: [mapPaymentToFrontend(payload.new), ...state.payments] }));
         })
         .subscribe();
     },
 
-    addClientBalance: async (newClient) => {
+    addClient: async (newClient) => {
       const tempId = `temp-client-${Date.now()}`;
       const clientWithId = { ...newClient, id: tempId };
       set((state) => ({ clients: [clientWithId, ...state.clients] }));
@@ -149,7 +151,7 @@ export const useLedgerStore = create<LedgerState>((set, get) => {
       db.put('clients', clientWithId as any);
 
       const dbItem = mapClientToBackend(newClient);
-      const { data, error } = await supabase.from('ledger_clients').insert(dbItem).select().single();
+      const { data, error } = await supabase.from('clients').insert(dbItem).select().single();
       
       if (data) {
         const finalClient = mapClientToFrontend(data);
@@ -159,11 +161,11 @@ export const useLedgerStore = create<LedgerState>((set, get) => {
         db.delete('clients', tempId);
         db.put('clients', finalClient as any);
       } else if (error) {
-        console.error("Failed to add client:", error);
+        queueOperation({ type: "INSERT", table: "clients", data: dbItem });
       }
     },
 
-    updateClientBalance: async (id, updated) => {
+    updateClient: async (id, updated) => {
       set((state) => ({
         clients: state.clients.map((c) => (c.id === id ? { ...c, ...updated } : c)),
       }));
@@ -173,8 +175,10 @@ export const useLedgerStore = create<LedgerState>((set, get) => {
       if (current) db.put('clients', current as any);
 
       const dbItem = mapClientToBackend(updated);
-      const { error } = await supabase.from('ledger_clients').update(dbItem).eq('id', id);
-      if (error) console.error("Failed to update client:", error);
+      const { error } = await supabase.from('clients').update(dbItem).eq('id', id);
+      if (error) {
+         queueOperation({ type: "UPDATE", table: "clients", data: { ...dbItem, id } });
+      }
     },
 
     addPayment: async (newPayment) => {
@@ -182,14 +186,14 @@ export const useLedgerStore = create<LedgerState>((set, get) => {
       set((state) => ({ payments: [{ ...newPayment, id: tempId }, ...state.payments] }));
       
       const dbItem = mapPaymentToBackend(newPayment);
-      const { data, error } = await supabase.from('ledger_payments').insert(dbItem).select().single();
+      const { data, error } = await supabase.from('payments').insert(dbItem).select().single();
       
       if (data) {
         set((state) => ({
           payments: state.payments.map(p => p.id === tempId ? mapPaymentToFrontend(data) : p)
         }));
       } else if (error) {
-        console.error("Failed to add payment:", error);
+        queueOperation({ type: "INSERT", table: "payments", data: dbItem });
       }
     },
   };
