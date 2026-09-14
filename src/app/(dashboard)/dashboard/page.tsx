@@ -233,7 +233,7 @@ export default function DashboardPage() {
               <span>CRITICAL EXPIRY ALERT (&le; 7 Months Remaining)</span>
             </div>
             <Link href="/products">
-              <Button variant="destructive" size="sm" className="text-xs bg-red-600 hover:bg-red-700 font-bold">
+              <Button variant="destructive" size="sm" className="text-xs bg-red-600 hover:bg-red-700 text-white font-bold">
                 View All Inventory &rarr;
               </Button>
             </Link>
