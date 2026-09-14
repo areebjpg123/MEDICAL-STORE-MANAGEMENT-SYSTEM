@@ -87,12 +87,6 @@ BEGIN
     -- Add columns to orders if they don't exist
     BEGIN ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS original_total NUMERIC DEFAULT 0; EXCEPTION WHEN duplicate_column THEN END;
     BEGIN ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS cost_total NUMERIC DEFAULT 0; EXCEPTION WHEN duplicate_column THEN END;
-    
-    -- Realtime config
-    ALTER PUBLICATION supabase_realtime ADD TABLE public.products;
-    ALTER PUBLICATION supabase_realtime ADD TABLE public.orders;
-    ALTER PUBLICATION supabase_realtime ADD TABLE public.ledger_clients;
-    ALTER PUBLICATION supabase_realtime ADD TABLE public.ledger_payments;
 EXCEPTION
     WHEN undefined_object THEN NULL;
 END $$;
