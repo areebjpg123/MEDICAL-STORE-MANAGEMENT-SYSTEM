@@ -74,7 +74,7 @@ export function GlobalReceiptPrinter() {
           lineColor="#000000"
           margin={0}
         />
-        <p className="mt-4">Software by Areeb</p>
+        <p className="mt-4">Software by Areeb & Isbah</p>
       </div>
     </div>
   );
