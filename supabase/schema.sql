@@ -96,3 +96,33 @@ BEGIN
 EXCEPTION
     WHEN undefined_object THEN NULL;
 END $$;
+
+
+-- ==========================================
+-- ROW LEVEL SECURITY (RLS) POLICIES
+-- ==========================================
+
+-- Enable RLS on all tables
+ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.ledger_clients ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.ledger_payments ENABLE ROW LEVEL SECURITY;
+
+-- Create policies to only allow authenticated users to view, insert, update, or delete.
+-- (Assumes users are authenticated via Supabase Auth)
+
+-- Products
+CREATE POLICY "Allow authenticated full access to products" ON public.products FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Deny anonymous access to products" ON public.products FOR ALL TO anon USING (false);
+
+-- Orders
+CREATE POLICY "Allow authenticated full access to orders" ON public.orders FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Deny anonymous access to orders" ON public.orders FOR ALL TO anon USING (false);
+
+-- Ledger Clients
+CREATE POLICY "Allow authenticated full access to ledger_clients" ON public.ledger_clients FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Deny anonymous access to ledger_clients" ON public.ledger_clients FOR ALL TO anon USING (false);
+
+-- Ledger Payments
+CREATE POLICY "Allow authenticated full access to ledger_payments" ON public.ledger_payments FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Deny anonymous access to ledger_payments" ON public.ledger_payments FOR ALL TO anon USING (false);

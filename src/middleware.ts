@@ -31,14 +31,8 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Protect all dashboard routes
-  if (
-    !user &&
-    (request.nextUrl.pathname.startsWith('/pos') ||
-      request.nextUrl.pathname.startsWith('/inventory') ||
-      request.nextUrl.pathname.startsWith('/history') ||
-      request.nextUrl.pathname.startsWith('/settings'))
-  ) {
+  // Protect all routes except login
+  if (!user && request.nextUrl.pathname !== '/login') {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
