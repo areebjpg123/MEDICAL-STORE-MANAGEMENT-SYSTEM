@@ -6,10 +6,15 @@ import { useInventoryStore } from "@/store/useInventoryStore";
 import { useOrderStore } from "@/store/useOrderStore";
 import { check } from "@tauri-apps/plugin-updater";
 import { toast } from "sonner";
+import { registerAutoSync } from "@/lib/sync";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { fetchItems, subscribeToRealtime, initialized } = useInventoryStore();
   const { fetchOrders, subscribeToRealtime: subscribeToOrders, initialized: ordersInitialized } = useOrderStore();
+
+  useEffect(() => {
+    registerAutoSync();
+  }, []);
 
   useEffect(() => {
     if (!initialized) {
